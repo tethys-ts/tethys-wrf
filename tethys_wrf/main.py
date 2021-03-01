@@ -26,7 +26,7 @@ import zstandard as zstd
 
 base_path = '/media/sdb1/Data/UC/wrf'
 nc1 = 'wrfout_d03_2017-01-07_00_00_00.nc'
-nc1 = 'wrfout_d04_2014-02-22_00_00_00.nc'
+# nc1 = 'wrfout_d04_2014-02-22_00_00_00.nc'
 
 # ncs1 = ['wrfout_d04_2014-02-22_00_00_00.nc', 'wrfout_d04_2014-03-01_00_00_00.nc']
 
@@ -77,11 +77,11 @@ bucket = param['remote']['s3']['bucket']
 
 # slp1 = wrf.getvar(nc, 'slp', timeidx=wrf.ALL_TIMES, units='hPa')
 
-# self = WRF(nc)
-# dataset = self.build_dataset(parameter_code, owner, product_code, data_license, attribution)
-# data = self.get_results()
+self = WRF(nc)
+dataset = self.build_dataset(parameter_code, owner, product_code, data_license, attribution)
+data = self.get_results()
 
-# self.save_results(conn_config, bucket, public_url=None, run_date=None, threads=20)
+self.save_results(conn_config, bucket, public_url=public_url, run_date=None, threads=30)
 
 
 ########################################
@@ -325,73 +325,81 @@ class WRF(object):
         setattr(self, 'parameter_code', parameter_code)
 
         return ds1
-    
-    
+
+
     def save_results(self, conn_config, bucket, public_url=None, run_date=None, threads=30):
         """
-        
+
         """
         start1 = pd.Timestamp.now('utc').round('s')
         print('start: ' + str(start1))
-        
+
         ## prepare all of the input data
-        data1 = self.param_data.copy()
+        if not hasattr(self, 'param_dataset'):
+            raise ValueError('Run build dataset before save_results.')
+
         ds1 = self.param_dataset.copy()
+
+        if not hasattr(self, 'param_data'):
+            data1 = self.get_results().copy()
+        else:
+            data1 = self.param_data.copy()
+
         map1 = self.param_map.copy()
         data1['height']= map1['height']
         encoding = {ds1['parameter']: map1[['scale_factor', 'add_offset', 'dtype', '_FillValue']].dropna().to_dict()}
         attrs = {ds1['parameter']: ds1.copy()}
-        
+
         run_date_key = tu.make_run_date_key(run_date)
-        
+
+        s3 = tu.s3_connection(conn_config, threads)
+
         ## Create the iterator for starmap
-        inputs = [(data1.sel(station_id=s).copy(), attrs, encoding, run_date_key, conn_config, bucket, public_url) for s in data1.station_id.values]
-        
+        inputs = iter((data1.sel(station_id=s).copy(), attrs, encoding, run_date_key, conn_config, bucket, s3, public_url) for s in data1.station_id.values.tolist())
+
         ## Run the threadpool
         # output = ThreadPool(threads).imap_unordered(update_result, results)
         with ThreadPool(threads) as pool:
             output = pool.starmap(self._save_results, inputs)
             pool.close()
             pool.join()
-            
+
         ## Final station and dataset agg
-        s3 = tu.s3_connection(conn_config)
-        
         ds_new = tu.put_remote_dataset(s3, bucket, ds1)
         ds_stations = tu.put_remote_agg_stations(s3, bucket, ds1['dataset_id'])
 
         ### Aggregate all datasets for the bucket
         ds_all = tu.put_remote_agg_datasets(s3, bucket)
-        
+
         end1 = pd.Timestamp.now('utc').round('s')
         print('End: ' + str(end1))
-        
-        
+
+
     @staticmethod
-    def _save_results(data, attrs, encoding, run_date, conn_config, bucket, public_url=None):
+    def _save_results(data, attrs, encoding, run_date, conn_config, bucket, s3, public_url=None):
         """
-        
+
         """
         stn_id = str(data['station_id'].values)
-        
+
         print(stn_id)
-        
+
         lat = round(float(data['lat'].values), 6)
         lon = round(float(data['lon'].values), 6)
         alt = round(float(data['altitude'].values), 3)
-        
+
         geo1 = {"coordinates": [lon, lat], "type": "Point"}
-                
+
         stn_data = {'geometry': geo1, 'altitude': alt, 'station_id': stn_id, 'virtual_station': True}
-        
+
         df1 = data.drop(['lat', 'lon', 'altitude', 'station_id']).to_dataframe().set_index('height', append=True)
         parameter = df1.columns[0]
         ds_id = attrs[parameter]['dataset_id']
-        
+
         new1 = tu.data_to_xarray(df1, stn_data, parameter, attrs, encoding, virtual_station=True)
-        
+
         up1 = tu.compare_datasets_from_s3(conn_config, bucket, new1, add_old=True, last_run_date_key=run_date, public_url=public_url)
-        
+
         ## Save results
         if isinstance(up1, xr.Dataset) and (len(up1[parameter].time) > 0):
 
@@ -402,11 +410,9 @@ class WRF(object):
 
             cctx = zstd.ZstdCompressor(level=1)
             c_obj = cctx.compress(up1.to_netcdf())
-            
-            s3 = tu.s3_connection(conn_config)
 
             s3.put_object(Body=c_obj, Bucket=bucket, Key=new_key, ContentType='application/zstd', Metadata={'run_date': run_date})
-            
+
             up1.close()
 
             ## Process stn data
@@ -425,13 +431,13 @@ class WRF(object):
         new1.close()
         new1 = None
         up1 = None
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
 
 
 
