@@ -19,10 +19,10 @@ descrip = 'tethys wrf utilities'
 if os.environ.get('READTHEDOCS', False) == 'True':
     INSTALL_REQUIRES = []
 else:
-    INSTALL_REQUIRES = ['pydantic', 'geojson', 'requests', 'tethysts']
+    INSTALL_REQUIRES = ['tethys-utils', 'salem', 'dask', 'descartes', 'shapely']
 
 # Get the long description from the README file
-with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 # get all data dirs in the datasets module
@@ -161,7 +161,7 @@ setup(
     # If using Python 2.6 or earlier, then these have to be included in
     # MANIFEST.in as well.
     package_data={  # Optional
-        main_package: ['*.yml'],
+        main_package: ['*.yml', 'wrf_mappings.csv'],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may

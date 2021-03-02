@@ -24,89 +24,12 @@ import zstandard as zstd
 ##############################################
 ### Parameters
 
-base_path = '/media/sdb1/Data/UC/wrf'
-nc1 = 'wrfout_d03_2017-01-07_00_00_00.nc'
-# nc1 = 'wrfout_d04_2014-02-22_00_00_00.nc'
-
-# ncs1 = ['wrfout_d04_2014-02-22_00_00_00.nc', 'wrfout_d04_2014-03-01_00_00_00.nc']
-
-# ncs = [os.path.join(base_path, nc) for nc in ncs1]
-
-# nc = ncs[0]
-
-# nc = Dataset(os.path.join(base_path, nc1))
-nc = os.path.join(base_path, nc1)
+ds_cols = ['feature', 'parameter', 'frequency_interval', 'aggregation_statistic', 'units', 'wrf_standard_name', 'cf_standard_name', 'scale_factor']
 
 base_dir = os.path.realpath(os.path.dirname(__file__))
 
-ds_cols = ['feature', 'parameter', 'frequency_interval', 'aggregation_statistic', 'units', 'wrf_standard_name', 'cf_standard_name', 'scale_factor']
-
-with open(os.path.join(base_dir, 'parameters.yml')) as param:
-    param = yaml.safe_load(param)
-
-# wrf_mapping = pd.read_csv(os.path.join(base_dir, 'wrf_mappings.csv'))
-
-# general_dataset_data = {'utc_offset': '0H',
-#                         "license": "https://creativecommons.org/licenses/by/4.0/",
-#                         "attribution": "Data licensed by the NZ Open Data Consortium",
-#                         'method': 'simulation',
-#                         "result_type": "time_series_grid_simulation"}
-
-owner = 'NZ Open Modelling Consortium'
-product_code = 'NZ South Island 3km v01'
-product_code = 'Test 1km v01'
-data_license = "https://creativecommons.org/licenses/by/4.0/"
-attribution = "Data licensed by the NZ Open Data Consortium"
-
-parameter_code = 'temp_at_2'
-
-run_date = pd.Timestamp.now('utc').tz_localize(None).round('s')
-
-conn_config = param['remote']['s3']['connection_config']
-public_url = param['remote']['file']['connection_config']
-bucket = param['remote']['s3']['bucket']
-
-#############################################
-### Load data
-
-# xr1 = xr.open_mfdataset(nc)
-# slp1 = xr1['PSFC'].values
-
-# xr2 = salem.open_mf_wrf_dataset(nc)
-# slp2 = xr2['PSFC'].load()
-
-# slp1 = wrf.getvar(nc, 'slp', timeidx=wrf.ALL_TIMES, units='hPa')
-
-self = WRF(nc)
-dataset = self.build_dataset(parameter_code, owner, product_code, data_license, attribution)
-data = self.get_results()
-
-self.save_results(conn_config, bucket, public_url=public_url, run_date=None, threads=30)
-
-
 ########################################
-### Testing
-
-# wrf_dataset_mapping = {'RAINNC': {'feature': 'atmosphere',
-#                                   'parameter': 'precipitation',
-#                                   'aggregation_statistic': 'cumulative',
-#                                   'units': 'mm',
-#                                   'precision': 0.1,
-#                                   'wrf_standard_name': 'RAINNC',
-#                                   'cf_standard_name': "precipitation_amount",
-#                                   'properties': {'height': 0,
-#                                                  'encoding': {'precipitation':
-#                                                               {'scale_factor': 0.1,
-#                                                                'dtype': 'int16',
-#                                                                '_FillValue': -99}}}}}
-
-# general_dataset_data = {'utc_offset': '0H',
-#                         "license": "https://creativecommons.org/licenses/by/4.0/",
-#                         "attribution": "Data licensed by the NZ Open Data Consortium",
-#                         'method': 'simulation',
-#                         "result_type": "time_series_grid_simulation"}
-
-# wrf_python_parameters = ['uvmet10_wspd_wdir', 'rh2', 'td2']
+### Main class
 
 
 class WRF(object):
@@ -141,7 +64,7 @@ class WRF(object):
         xr1.coords['altitude'] = (('south_north', 'west_east'), alt)
 
         ## Determine frequency interval
-        freq = xr1['time'].to_index().inferred_freq
+        freq = xr1['time'][:5].to_index()[:5].inferred_freq
 
         if freq is None:
             raise ValueError('The time frequency could not be determined from the netcdf file.')
@@ -355,12 +278,15 @@ class WRF(object):
         s3 = tu.s3_connection(conn_config, threads)
 
         ## Create the iterator for starmap
-        inputs = iter((data1.sel(station_id=s).copy(), attrs, encoding, run_date_key, conn_config, bucket, s3, public_url) for s in data1.station_id.values.tolist())
+        stn_ids = data1.station_id.values.tolist()
+        inputs = iter((data1.sel(station_id=s).copy(), attrs, encoding, run_date_key, conn_config, bucket, s3, public_url) for s in stn_ids)
+        # inputs = iter((data1.sel(station_id=s).copy(), attrs, encoding, run_date_key, conn_config, bucket, s3, public_url) for s in stn_ids)
 
         ## Run the threadpool
         # output = ThreadPool(threads).imap_unordered(update_result, results)
         with ThreadPool(threads) as pool:
-            output = pool.starmap(self._save_results, inputs)
+            # output = pool.starmap(self._save_results, inputs, chunksize=90)
+            output = pool.imap_unordered(self._save_results, inputs, chunksize=900)
             pool.close()
             pool.join()
 
@@ -376,10 +302,11 @@ class WRF(object):
 
 
     @staticmethod
-    def _save_results(data, attrs, encoding, run_date, conn_config, bucket, s3, public_url=None):
+    def _save_results(val):
         """
 
         """
+        data, attrs, encoding, run_date, conn_config, bucket, s3, public_url = val
         stn_id = str(data['station_id'].values)
 
         print(stn_id)
@@ -392,11 +319,12 @@ class WRF(object):
 
         stn_data = {'geometry': geo1, 'altitude': alt, 'station_id': stn_id, 'virtual_station': True}
 
-        df1 = data.drop(['lat', 'lon', 'altitude', 'station_id']).to_dataframe().set_index('height', append=True)
-        parameter = df1.columns[0]
+        df1 = data.drop(['lat', 'lon', 'altitude', 'station_id']).to_dataframe().reset_index()
+        df2 = df1.drop_duplicates('time', keep='last').set_index(['time', 'height'])
+        parameter = df2.columns[0]
         ds_id = attrs[parameter]['dataset_id']
 
-        new1 = tu.data_to_xarray(df1, stn_data, parameter, attrs, encoding, virtual_station=True)
+        new1 = tu.data_to_xarray(df2, stn_data, parameter, attrs, encoding, virtual_station=True)
 
         up1 = tu.compare_datasets_from_s3(conn_config, bucket, new1, add_old=True, last_run_date_key=run_date, public_url=public_url)
 
@@ -436,13 +364,6 @@ class WRF(object):
 
 
 
-
-
-
-
-
-
-# data, attrs, encoding, run_date, conn_config, bucket, public_url = inputs[0]
 
 
 

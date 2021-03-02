@@ -1,0 +1,12 @@
+parameter_code,wrf_standard_name,function,parameter,feature,aggregation_statistic,height,units,cf_standard_name,scale_factor,add_offset,dtype,_FillValue,min,max
+temp_at_2,T2,calc_temp2,temperature,atmosphere,mean,2,degC,air_temperature,0.01,,int16,-9999,-80,50
+precip_at_0,RAINNC,,precipitation,atmosphere,cumulative,0,mm,precipitation_amount,0.1,,int16,-9999,0,900
+snow_at_0,SNOWNC,,snow_depth,atmosphere,cumulative,0,mm,thickness_of_snowfall_amount,0.1,,int16,-9999,0,900
+runoff_at_0,SFROFF,,surface_runoff,waterway,cumulative,0,mm,surface_runoff_amount,0.1,,int16,-9999,0,900
+recharge_at_0,UDROFF,,recharge_groundwater,groundwater,cumulative,0,mm,subsurface_runoff_amount,0.1,,int16,-9999,0,900
+pressure_at_0,PSFC,calc_surface_pressure,barometric_pressure,atmosphere,mean,0,hPa,air_pressure,0.01,-1000,int16,-9999,800,1090
+shortwave_rad_at_0,SWDOWN,,radiation_incoming_shortwave,atmosphere,cumulative,0,W/m^2,surface_downwelling_shortwave_flux_in_air,0.1,,int16,-9999,0,900
+longwave_rad_at_0,GLW,,radiation_incoming_longwave,atmosphere,cumulative,0,W/m^2,surface_downwelling_longwave_flux_in_air,0.1,,int16,-9999,0,900
+heat_flux_at_0,HFX,,ground_heat_flux,pedosphere,cumulative,0,W/m^2,upward_heat_flux_at_ground_level_in_soil,0.1,,int16,-9999,0,900
+relative_humidity_at_2,RH2,calc_rh2,relative_humidity,atmosphere,mean,2,m^3/m^3,relative_humidity,0.01,,int16,-9999,0,99
+wind_speed_at_2,WS2,calc_wind_speed,wind_speed,atmosphere,mean,2,m/s,wind_speed,0.01,,int16,-9999,0,200

@@ -1,6 +1,6 @@
 {% set name = "tethys-wrf" %}
 {% set version = "0.0.1" %}
-{% set sha256 = "51561213bc00b73694543c73be7d734071f6a0bdc10876f613de9b2e0c00eab9" %}
+{% set sha256 = "e57c565ca29feb873d0f390d688096371c0302c3d41d3d328915bbe70151add6" %}
 
 # sha256 is the prefered checksum -- you can get it for a file with:
 #  `openssl sha256 <file name>`.
@@ -39,16 +39,18 @@ requirements:
     - tethys-utils
     - salem
     - dask
+    - descartes
+    - shapely
 
 test:
   imports:
-    - tethys_utils
+    - tethys_wrf
 
 about:
-  home: https://github.com/tethys-ts/tethys-utils
+  home: https://github.com/tethys-ts/tethys-wrf
   license: Apache License 2.0
   license_family: APACHE
-  summary: tethys utilities
-  description: tethys utilities
-  doc_url: https://github.com/tethys-ts/tethys-utils
+  summary: tethys wrf utilities
+  description: tethys wrf utilities
+  doc_url: https://github.com/tethys-ts/tethys-wrf
   dev_url: ''
