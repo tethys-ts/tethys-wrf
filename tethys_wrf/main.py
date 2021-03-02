@@ -15,7 +15,7 @@ import numpy as np
 import copy
 import orjson
 import tethys_utils as tu
-import salem
+from tethys_wrf import sio
 from multiprocessing.pool import ThreadPool, Pool
 import zstandard as zstd
 
@@ -40,7 +40,7 @@ class WRF(object):
         """
 
         """
-        xr1 = salem.open_mf_wrf_dataset(wrf_nc)
+        xr1 = sio.open_mf_wrf_dataset(wrf_nc)
         xr1 = xr1.drop('xtime', errors='ignore')
 
         ### Pre-process the station data
