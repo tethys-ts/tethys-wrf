@@ -5,7 +5,6 @@ Created on Mon Jan 18 10:32:40 2021
 
 @author: mike
 """
-import yaml
 import os
 import xarray as xr
 import pandas as pd
@@ -13,7 +12,6 @@ import numpy as np
 # from netCDF4 import Dataset
 # from wrf import getvar, interpline, CoordPair, xy_to_ll, ll_to_xy
 # import wrf
-import requests
 import copy
 import orjson
 import tethys_utils as tu
@@ -43,9 +41,6 @@ class WRF(object):
 
         """
         xr1 = salem.open_mf_wrf_dataset(wrf_nc)
-        xr2 = xr.open_mfdataset(wrf_nc, concat_dim='Time')
-
-
         xr1 = xr1.drop('xtime', errors='ignore')
 
         ### Pre-process the station data
