@@ -35,8 +35,9 @@ requirements:
     - python
     - setuptools
   run:
-    - python
+    - python=3.8
     - tethys-utils
+    - xarray=0.16.2
     - salem
     - dask
     - descartes

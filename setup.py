@@ -19,7 +19,7 @@ descrip = 'tethys wrf utilities'
 if os.environ.get('READTHEDOCS', False) == 'True':
     INSTALL_REQUIRES = []
 else:
-    INSTALL_REQUIRES = ['tethys-utils', 'salem', 'dask', 'descartes', 'shapely']
+    INSTALL_REQUIRES = ['tethys-utils', 'salem', 'dask', 'descartes', 'shapely', 'xarray==0.16.2']
 
 # Get the long description from the README file
 with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:

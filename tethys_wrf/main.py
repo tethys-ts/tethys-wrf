@@ -42,7 +42,10 @@ class WRF(object):
         """
 
         """
-        xr1 = salem.open_mf_wrf_dataset(nc)
+        xr1 = salem.open_mf_wrf_dataset(wrf_nc)
+        xr2 = xr.open_mfdataset(wrf_nc, concat_dim='Time')
+
+
         xr1 = xr1.drop('xtime', errors='ignore')
 
         ### Pre-process the station data
