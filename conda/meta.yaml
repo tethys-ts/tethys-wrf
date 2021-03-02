@@ -1,6 +1,6 @@
 {% set name = "tethys-wrf" %}
-{% set version = "0.0.2" %}
-{% set sha256 = "04a0da7a3a243aae0c198afd789200c0be02a044e0d7f577eee7205f07f79768" %}
+{% set version = "0.0.3" %}
+{% set sha256 = "a3cb8ef028053a7cdec21486f9c6beb975e88bc12728edbda0c4557a52f5275d" %}
 
 # sha256 is the prefered checksum -- you can get it for a file with:
 #  `openssl sha256 <file name>`.
@@ -42,6 +42,10 @@ requirements:
     - dask
     - descartes
     - shapely
+    - pyproj
+    - netcdf4
+    - joblib
+    - toolz
 
 test:
   imports:
