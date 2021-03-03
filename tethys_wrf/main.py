@@ -318,7 +318,7 @@ class WRF(object):
         stn_data = {'geometry': geo1, 'altitude': alt, 'station_id': stn_id, 'virtual_station': True}
 
         df1 = data.drop(['lat', 'lon', 'altitude', 'station_id']).to_dataframe().reset_index()
-        df2 = df1.drop_duplicates('time', keep='last').set_index(['time', 'height'])
+        df2 = df1.drop_duplicates('time', keep='first').set_index(['time', 'height'])
         parameter = df2.columns[0]
         ds_id = attrs[parameter]['dataset_id']
 
