@@ -186,6 +186,41 @@ class WRF(object):
         return pres
 
 
+    @staticmethod
+    def calc_eto(wrf_xr):
+        """
+
+        """
+        ## Assign variables
+        qv = wrf_xr['Q2']
+        pres = wrf_xr['PSFC']
+        gamma = (0.665*10**-3)*pres/1000
+        t2 = wrf_xr['T2'] - 273.15
+        G = wrf_xr['HFX'] * 0.0036
+        R_n = (wrf_xr['SWDOWN']*wrf_xr['ALBEDO'] + wrf_xr['GLW']) * 0.0036
+        # R_nl = wrf_xr['GLW'] * 0.0036
+        # alb = wrf_xr['ALBEDO']
+        u10 = wrf_xr['U10']
+        v10 = wrf_xr['V10']
+        ws2 = np.sqrt(u10**2 + v10**2)*4.87/(np.log(67.8*10 - 5.42))
+
+        # Humidity
+        e_mean = 0.6108*np.exp(17.27*t2/(t2+237.3))
+        qvs = 0.622*e_mean/(pres/100-(1-0.622)*e_mean)
+        rh = 100*qv/qvs
+        rh = xr.where(rh > 100, 100, rh)
+
+        # Vapor pressure
+        e_a = e_mean * rh/100
+        delta = 4098*(0.6108*np.exp(17.27*t2/(t2 + 237.3)))/((t2 + 237.3)**2)
+        # R_ns = (1 - alb)*R_s
+
+        # Calc ETo
+        ETo = (0.408*delta*(R_n - G) + gamma*37/(t2 + 273)*ws2*(e_mean - e_a))/(delta + gamma*(1 + 0.34*ws2))
+
+        return ETo
+
+
     def get_results(self, parameter_code=None, station_id_index=True):
         """
 
