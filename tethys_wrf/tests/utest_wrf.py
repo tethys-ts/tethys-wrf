@@ -29,7 +29,7 @@ nc1 = 'wrfout_d02_*'
 # nc = ncs[0]
 
 # nc = Dataset(os.path.join(base_path, nc1))
-nc = os.path.join(base_path, nc1)
+wrf_nc = os.path.join(base_path, nc1)
 
 base_dir = os.path.realpath(os.path.dirname(__file__))
 
@@ -71,7 +71,7 @@ bucket = param['remote']['s3']['bucket']
 ########################################
 ### Tests
 
-self = WRF(nc)
+self = WRF(wrf_nc)
 dataset = self.build_dataset(parameter_code, owner, product_code, data_license, attribution)
 data = self.get_results()
 

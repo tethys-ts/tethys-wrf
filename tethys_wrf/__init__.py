@@ -1,4 +1,4 @@
-# from tethys_wrf.main import WRF
+from tethys_wrf.main import WRF
 # from tethys_wrf import sio
 from functools import wraps
 import pyproj

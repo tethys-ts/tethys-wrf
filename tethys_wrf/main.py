@@ -13,12 +13,13 @@ import numpy as np
 # from wrf import getvar, interpline, CoordPair, xy_to_ll, ll_to_xy
 # import wrf
 from tethys_wrf import virtual_parameters as vp
+# import virtual_parameters as vp
 import copy
-import orjson
+# import orjson
 import tethys_utils as tu
 from tethys_wrf import sio
-from multiprocessing.pool import ThreadPool, Pool
-import zstandard as zstd
+# from multiprocessing.pool import ThreadPool, Pool
+# import zstandard as zstd
 
 ##############################################
 ### Parameters
@@ -196,7 +197,8 @@ class WRF(object):
         ## Prepare data
         stn_ids = data1.station_id.values.tolist()
 
-        for s in stn_ids[:100]:
+        for s in stn_ids[:1000]:
+        # for s in stn_ids:
             print(s)
             data2 = data1.sel(station_id=s).copy()
 
@@ -233,22 +235,22 @@ class WRF(object):
 
         print('Finished saving data!')
 
-        print('Aggregate all stations for the dataset and all datasets in the bucket')
 
-        s3 = tu.s3_connection(remote['connection_config'], 50)
+    def update_stations_datasets(self, processing_code, remote, threads=60):
+        """
+
+        """
+        s3 = tu.s3_connection(remote['connection_config'], threads)
 
         ds = self.param_dataset.copy()
 
         ds_new = tu.put_remote_dataset(s3, remote['bucket'], ds)
-        ds_stations = tu.put_remote_agg_stations(s3, remote['bucket'], ds['dataset_id'], 50)
+        ds_stations = tu.put_remote_agg_stations(s3, remote['bucket'], ds['dataset_id'], threads)
 
         ### Aggregate all datasets for the bucket
-        ds_all = tu.put_remote_agg_datasets(s3, remote['bucket'], 50)
+        ds_all = tu.put_remote_agg_datasets(s3, remote['bucket'], threads)
 
         print('--Success!')
-
-
-
 
 
 
