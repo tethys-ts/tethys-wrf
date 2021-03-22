@@ -126,7 +126,7 @@ class WRF(object):
         if parameter_code not in self.datasets:
             raise ValueError('parameter_code ' + parameter_code + ' is not available. Check the datasets dict for the available parameter codes.')
 
-        ## Remove prior parameter_code
+        ## Remove prior stored objects
         if hasattr(self, 'parameter_code'):
             delattr(self, 'parameter_code')
         if hasattr(self, 'param_dataset'):
@@ -135,6 +135,10 @@ class WRF(object):
             delattr(self, 'param_data')
         if hasattr(self, 'param_map'):
             delattr(self, 'param_map')
+        if hasattr(self, 'data_dict'):
+            delattr(self, 'data_dict')
+        if hasattr(self, 'run_date_dict'):
+            delattr(self, 'run_date_dict')
 
         ## Build the dataset
         datasets = self.datasets
