@@ -283,7 +283,7 @@ class WRF(object):
         return ds1
 
 
-    def save_results(self, conn_config, bucket, public_url=None, run_date=None, threads=30):
+    def package_results(self, run_date=None):
         """
 
         """
@@ -304,34 +304,50 @@ class WRF(object):
         map1 = self.param_map.copy()
         data1['height']= map1['height']
         encoding = {ds1['parameter']: map1[['scale_factor', 'add_offset', 'dtype', '_FillValue']].dropna().to_dict()}
-        attrs = {ds1['parameter']: ds1.copy()}
+        # attrs = {ds1['parameter']: ds1.copy()}
+        # remote = {'bucket': bucket, 'connection_config': conn_config}
 
-        run_date_key = tu.make_run_date_key(run_date)
+        ds_id = ds1['dataset_id']
+        ds2 = ds1.copy()
+        ds2['properties'] = {'encoding': encoding}
 
-        s3 = tu.s3_connection(conn_config, threads)
+        max_run_date_key = tu.make_run_date_key(run_date)
+        run_date_dict = {ds_id: max_run_date_key}
 
-        ## Create the iterator for starmap
+        # run_date_dict = tu.process_run_date(3, [ds1], remote, run_date=run_date)
+        # max_run_date_key = max(list(run_date_dict.values()))
+
+        ## Create the data_dict
+        ds_id = ds1['dataset_id']
+        data_dict = {ds_id: []}
+
+        ## Prepare data
         stn_ids = data1.station_id.values.tolist()
-        inputs = iter((data1.sel(station_id=s).copy(), attrs, encoding, run_date_key, conn_config, bucket, s3, public_url) for s in stn_ids)
-        # inputs = iter((data1.sel(station_id=s).copy(), attrs, encoding, run_date_key, conn_config, bucket, s3, public_url) for s in stn_ids)
 
-        ## Run the threadpool
-        # output = ThreadPool(threads).imap_unordered(update_result, results)
-        with ThreadPool(threads) as pool:
-            # output = pool.starmap(self._save_results, inputs, chunksize=90)
-            output = pool.imap_unordered(self._save_results, inputs, chunksize=900)
-            pool.close()
-            pool.join()
+        for s in stn_ids[:100]:
+            print(s)
+            data2 = data1.sel(station_id=s).copy()
 
-        ## Final station and dataset agg
-        ds_new = tu.put_remote_dataset(s3, bucket, ds1)
-        ds_stations = tu.put_remote_agg_stations(s3, bucket, ds1['dataset_id'])
+            lat = float(data2['lat'].values)
+            lon = float(data2['lon'].values)
+            alt = round(float(data2['altitude'].values), 3)
 
-        ### Aggregate all datasets for the bucket
-        ds_all = tu.put_remote_agg_datasets(s3, bucket)
+            geo1 = {"coordinates": [lon, lat], "type": "Point"}
 
-        end1 = pd.Timestamp.now('utc').round('s')
-        print('End: ' + str(end1))
+            stn_data = {'geometry': geo1, 'altitude': alt, 'station_id': s, 'virtual_station': True}
+
+            df1 = data2.drop(['lat', 'lon', 'altitude', 'station_id']).to_dataframe().reset_index()
+            df2 = df1.drop_duplicates('time', keep='first')
+
+            tu.prepare_results(data_dict, [ds2], stn_data, df2, max_run_date_key,  other_closed='left', discrete=False)
+
+        setattr(self, 'data_dict', data_dict)
+        setattr(self, 'run_date_dict', run_date_dict)
+        data1.close()
+        del data1
+        data2.close()
+        del data2
+        print('Finished packaging the data')
 
 
     @staticmethod

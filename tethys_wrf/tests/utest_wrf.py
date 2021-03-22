@@ -4,10 +4,12 @@ Created on Tue Jul  2 09:25:41 2019
 
 @author: michaelek
 """
-import pytest
-from tethys_utils import *
+# import pytest
+import os
+import yaml
+import tethys_utils as tu
 import pandas as pd
-from tethys_utils.datasets import get_path
+# from tethys_utils.datasets import get_path
 
 pd.options.display.max_columns = 10
 
@@ -18,7 +20,7 @@ pd.options.display.max_columns = 10
 base_path = '/media/sdb1/Data/UC/wrf'
 nc1 = 'wrfout_d03_2017-01-07_00_00_00.nc'
 # nc1 = 'wrfout_d04_2014-02-22_00_00_00.nc'
-nc1 = 'wrfout_d03_*.nc'
+nc1 = 'wrfout_d02_*'
 
 # ncs1 = ['wrfout_d04_2014-02-22_00_00_00.nc', 'wrfout_d04_2014-03-01_00_00_00.nc']
 
@@ -53,6 +55,7 @@ attribution = "Data licensed by the NZ Open Data Consortium"
 parameter_code = 'temp_at_2'
 
 run_date = pd.Timestamp.now('utc').tz_localize(None).round('s')
+run_date = pd.Timestamp(param['source']['dataset_metadata']['run_date'])
 
 conn_config = param['remote']['s3']['connection_config']
 public_url = param['remote']['file']['connection_config']
