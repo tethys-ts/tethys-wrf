@@ -197,8 +197,8 @@ class WRF(object):
         ## Prepare data
         stn_ids = data1.station_id.values.tolist()
 
-        for s in stn_ids[:1000]:
-        # for s in stn_ids:
+        # for s in stn_ids[:1000]:
+        for s in stn_ids:
             print(s)
             data2 = data1.sel(station_id=s).copy()
 
