@@ -10,4 +10,4 @@ longwave_rad_at_0,GLW,,radiation_incoming_longwave,atmosphere,cumulative,0,W/m^2
 heat_flux_at_0,HFX,,ground_heat_flux,pedosphere,cumulative,0,W/m^2,upward_heat_flux_at_ground_level_in_soil,0.1,,int16,-9999,0,900
 relative_humidity_at_2,RH2,calc_rh2,relative_humidity,atmosphere,mean,2,m^3/m^3,relative_humidity,0.01,,int16,-9999,0,99
 wind_speed_at_2,WS2,calc_wind_speed,wind_speed,atmosphere,mean,2,m/s,wind_speed,0.01,,int16,-9999,0,200
-reference_et,ETo,calc_eto,reference_et,atmosphere,mean,0,mm,water_evapotranspiration_flux,0.1,,int16,-9999,,
+reference_et,ETo,calc_eto,reference_et,atmosphere,cumulative,0,mm,water_evapotranspiration_flux,0.1,,int16,-9999,,
