@@ -236,7 +236,7 @@ class WRF(object):
         print('Finished saving data!')
 
 
-    def update_stations_datasets(self, processing_code, remote, threads=60):
+    def update_stations_datasets(self, remote, threads=60):
         """
 
         """
