@@ -53,6 +53,7 @@ data_license = "https://creativecommons.org/licenses/by/4.0/"
 attribution = "Data licensed by the NZ Open Data Consortium"
 
 parameter_code = 'temp_at_2'
+parameter_code = 'precip_at_0'
 
 run_date = pd.Timestamp.now('utc').tz_localize(None).round('s')
 run_date = pd.Timestamp(param['source']['dataset_metadata']['run_date'])
