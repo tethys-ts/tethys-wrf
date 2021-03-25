@@ -143,8 +143,57 @@ def calc_eto(wrf_xr):
     return ETo
 
 
+def calc_precip0(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    precip = wrf_xr['RAINNC']
+
+    ## Convert from accumultion to cumultive
+    precip1 = precip.diff('time', label='lower')
+    precip2 = xr.where(precip1 < 0, 0, precip1)
+
+    return precip2
 
 
+def calc_snow0(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    precip = wrf_xr['SNOWNC']
+
+    ## Convert from accumultion to cumultive
+    precip1 = precip.diff('time', label='lower')
+    precip2 = xr.where(precip1 < 0, 0, precip1)
+
+    return precip2
 
 
+def calc_runoff0(wrf_xr):
+    """
 
+    """
+    ## Assign variables
+    precip = wrf_xr['SFROFF']
+
+    ## Convert from accumultion to cumultive
+    precip1 = precip.diff('time', label='lower')
+    precip2 = xr.where(precip1 < 0, 0, precip1)
+
+    return precip2
+
+
+def calc_recharge0(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    precip = wrf_xr['UDROFF']
+
+    ## Convert from accumultion to cumultive
+    precip1 = precip.diff('time', label='lower')
+    precip2 = xr.where(precip1 < 0, 0, precip1)
+
+    return precip2
