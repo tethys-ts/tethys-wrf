@@ -18,8 +18,6 @@ import copy
 # import orjson
 import tethys_utils as tu
 from tethys_wrf import sio
-# from multiprocessing.pool import ThreadPool, Pool
-# import zstandard as zstd
 
 ##############################################
 ### Parameters
