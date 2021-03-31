@@ -118,7 +118,7 @@ class WRF(object):
         return res2
 
 
-    def build_dataset(self, parameter_code, owner, product_code, data_license, attribution, method='simulation', result_type="time_series_grid_simulation"):
+    def build_dataset(self, parameter_code, owner, product_code, data_license, attribution, method='simulation', result_type="time_series_grid"):
         """
 
         """
