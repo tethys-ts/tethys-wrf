@@ -1,6 +1,6 @@
 {% set name = "tethys-wrf" %}
-{% set version = "0.1.0" %}
-{% set sha256 = "cf6e8b384029584e8d6df3ba00c8e658466f34a5d539f98e7e5df1137c739182" %}
+{% set version = "0.1.1" %}
+{% set sha256 = "06f77d671438dfddd0c2ccb078b4d0696f29e43aa17adff492ce64216a256584" %}
 
 # sha256 is the prefered checksum -- you can get it for a file with:
 #  `openssl sha256 <file name>`.
@@ -43,6 +43,7 @@ requirements:
     - pyproj
     - netcdf4
     - toolz
+    - hydrointerp
 
 test:
   imports:
