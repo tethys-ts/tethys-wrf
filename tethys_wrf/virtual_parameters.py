@@ -58,7 +58,7 @@ def calc_wind_speed(wrf_xr, height=2):
     Parameters
     ----------
     wrf_xr : xr.Dataset
-        The complete WRF output dataset with Q2, T2, and PSFC.
+        The complete WRF output dataset with V10 and U10.
     height : int
         The height for the estimate.
 
