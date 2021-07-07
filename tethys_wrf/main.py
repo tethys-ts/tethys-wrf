@@ -124,12 +124,16 @@ class WRF(tu.grid.Grid):
         else:
             map1 = self.mappings.loc[self.parameter_code].copy()
 
+        enconding1 = map1[['scale_factor', 'add_offset', 'dtype', '_FillValue']].dropna().to_dict()
+        if '_FillValue' in enconding1:
+            enconding1['_FillValue'] = int(enconding1['_FillValue'])
+
         ## Build the dataset
         datasets = self.datasets
 
         ds = datasets[parameter_code].copy()
 
-        props = {'encoding': {ds['parameter']: map1[['scale_factor', 'add_offset', 'dtype', '_FillValue']].dropna().to_dict()}}
+        props = {'encoding': {ds['parameter']: enconding1}}
 
         ds.update({'owner': owner, 'product_code': product_code, 'license': data_license, 'attribution': attribution, 'utc_offset': '0H', 'spatial_distribution': spatial_distribution, 'geometry_type': 'Point', 'grouping': grouping, 'method': method, 'description': description, 'properties': props})
 
