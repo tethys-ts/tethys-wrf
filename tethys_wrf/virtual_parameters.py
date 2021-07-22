@@ -118,7 +118,7 @@ def calc_eto(wrf_xr):
     pres = wrf_xr['PSFC']
     gamma = (0.665*10**-3)*pres/1000
     t2 = wrf_xr['T2'] - 273.15
-    G = wrf_xr['HFX'] * 0.0036
+    G = wrf_xr['GRDFLX'] * 0.0036
     R_n = (wrf_xr['SWDOWN']*wrf_xr['ALBEDO'] + wrf_xr['GLW']) * 0.0036
     # R_nl = wrf_xr['GLW'] * 0.0036
     # alb = wrf_xr['ALBEDO']
@@ -128,7 +128,7 @@ def calc_eto(wrf_xr):
 
     # Humidity
     e_mean = 0.6108*np.exp(17.27*t2/(t2+237.3))
-    qvs = 0.622*e_mean/(pres/100-(1-0.622)*e_mean)
+    qvs = 0.622*e_mean/(pres/1000-(1-0.622)*e_mean)
     rh = 100*qv/qvs
     rh = xr.where(rh > 100, 100, rh)
 
