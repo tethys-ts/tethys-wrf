@@ -12,13 +12,15 @@ import numpy as np
 # from netCDF4 import Dataset
 # from wrf import getvar, interpline, CoordPair, xy_to_ll, ll_to_xy
 # import wrf
-from tethys_wrf import virtual_parameters as vp
+# from tethys_wrf import virtual_parameters as vp
 # import virtual_parameters as vp
 import copy
 # import orjson
 import tethys_utils as tu
 from tethys_wrf import sio
 from hydrointerp import Interp
+from utils import param_func_mappings
+from glob import glob
 
 ##############################################
 ### Parameters
@@ -31,24 +33,48 @@ base_dir = os.path.realpath(os.path.dirname(__file__))
 ### Main class
 
 
-class WRF(tu.grid.Grid):
+class WRF(object):
     """
 
     """
     ## Initialization
-    def __init__(self, wrf_nc, process_altitude=False):
+    def __init__(self, wrf_nc, parameter_codes, param_func_mappings=param_func_mappings, process_altitude=False, preprocessor=None):
         """
 
         """
-        ## Get base path
-        if isinstance(wrf_nc, list):
-            base_path = os.path.split(wrf_nc[0])[0]
-        elif isinstance(wrf_nc, str):
-            base_path = os.path.split(wrf_nc)[0]
+        self.load_wrf_grid(wrf_nc, parameter_codes, None, param_func_mappings, process_altitude, preprocessor)
+
+        pass
+
+
+    def load_wrf_grid(self, wrf_nc, parameter_codes, chunks=None, param_func_mappings=param_func_mappings, process_altitude=False, preprocessor=None):
+        """
+
+        """
+        if isinstance(wrf_nc, str):
+            data_path = wrf_nc
+
+        elif isinstance(wrf_nc, list):
+            if isinstance(wrf_nc[0], str):
+                paths = []
+                [paths.extend(glob(p)) for p in wrf_nc]
+                paths.sort()
+                data_path = paths.copy()
+            else:
+                raise TypeError('If wrf_nc is a list, then it must be a list of str paths.')
+
         else:
-            raise TypeError('wrf_nc must be either a list of str or a str.')
+            raise TypeError('wrf_nc must be a str path that xr.open_mfdataset can open or a list of paths.')
 
-        xr1 = sio.open_mf_wrf_dataset(wrf_nc)
+        ## Get base path
+        # if isinstance(wrf_nc, list):
+        #     base_path = os.path.split(wrf_nc[0])[0]
+        # elif isinstance(wrf_nc, str):
+        #     base_path = os.path.split(wrf_nc)[0]
+        # else:
+        #     raise TypeError('wrf_nc must be either a list of str or a str.')
+
+        xr1 = sio.open_mf_wrf_dataset(data_path, chunks=chunks, preprocess=preprocessor)
         xr1 = xr1.drop('xtime', errors='ignore')
 
         ## Get data projection
@@ -68,92 +94,97 @@ class WRF(tu.grid.Grid):
             xr1.coords['altitude'] = (('south_north', 'west_east'), alt)
 
         ## Determine frequency interval
-        freq = xr1['time'][:5].to_index()[:5].inferred_freq
+        # freq = xr1['time'][:5].to_index()[:5].inferred_freq
 
-        if freq is None:
-            raise ValueError('The time frequency could not be determined from the netcdf file.')
+        # if freq is None:
+        #     raise ValueError('The time frequency could not be determined from the netcdf file.')
 
         ### Read in mapping table
-        wrf_mapping = pd.read_csv(os.path.join(base_dir, 'wrf_mappings.csv'))
-        wrf_mapping.set_index('parameter_code', inplace=True)
-        wrf_mapping['frequency_interval'] = freq
+        # wrf_mapping = pd.read_csv(os.path.join(base_dir, 'wrf_mappings.csv'))
+        # wrf_mapping.set_index('parameter_code', inplace=True)
+        # wrf_mapping['frequency_interval'] = freq
 
         ### Process base datasets
-        dsb = wrf_mapping[ds_cols].rename(columns={'scale_factor': 'precision'}).to_dict('index')
+        # dsb = wrf_mapping[ds_cols].rename(columns={'scale_factor': 'precision'}).to_dict('index')
+
+        ### Select only the parameters necessary
+        params = []
+        [params.extend(p) for pc, p in param_func_mappings.items() if pc in parameter_codes]
+        params = list(set(params))
+
+        xr1 = xr1[params]
 
         ### Set attrs
-        setattr(self, 'base_path', base_path)
+        # setattr(self, 'base_path', base_path)
         setattr(self, 'data', xr1)
-        setattr(self, 'mappings', wrf_mapping)
-        setattr(self, 'datasets', dsb)
-        setattr(self, 'vp', vp)
+        # setattr(self, 'mappings', wrf_mapping)
+        # setattr(self, 'datasets', dsb)
+        # setattr(self, 'vp', vp)
         setattr(self, 'data_crs', source_crs)
         setattr(self, 'grid_res', grid_res)
-
-        pass
 
 
     def __repr__(self):
         return repr(self.data)
 
 
-    def build_dataset(self, parameter_code, owner, product_code, grouping, data_license, attribution, description='WRF output', method='simulation', spatial_distribution='grid'):
-        """
+    # def build_dataset(self, parameter_code, owner, product_code, grouping, data_license, attribution, description='WRF output', method='simulation', spatial_distribution='grid'):
+    #     """
 
-        """
-        if parameter_code not in self.datasets:
-            raise ValueError('parameter_code ' + parameter_code + ' is not available. Check the datasets dict for the available parameter codes.')
+    #     """
+    #     if parameter_code not in self.datasets:
+    #         raise ValueError('parameter_code ' + parameter_code + ' is not available. Check the datasets dict for the available parameter codes.')
 
-        ## Remove prior stored objects
-        if hasattr(self, 'parameter_code'):
-            delattr(self, 'parameter_code')
-        if hasattr(self, 'param_dataset'):
-            delattr(self, 'param_dataset')
-        if hasattr(self, 'param_data'):
-            delattr(self, 'param_data')
-        if hasattr(self, 'param_map'):
-            delattr(self, 'param_map')
-        if hasattr(self, 'data_dict'):
-            delattr(self, 'data_dict')
-        if hasattr(self, 'run_date_dict'):
-            delattr(self, 'run_date_dict')
+    #     ## Remove prior stored objects
+    #     if hasattr(self, 'parameter_code'):
+    #         delattr(self, 'parameter_code')
+    #     if hasattr(self, 'param_dataset'):
+    #         delattr(self, 'param_dataset')
+    #     if hasattr(self, 'param_data'):
+    #         delattr(self, 'param_data')
+    #     if hasattr(self, 'param_map'):
+    #         delattr(self, 'param_map')
+    #     if hasattr(self, 'data_dict'):
+    #         delattr(self, 'data_dict')
+    #     if hasattr(self, 'run_date_dict'):
+    #         delattr(self, 'run_date_dict')
 
-        ## Get mapping
-        if isinstance(parameter_code, str):
-            map1 = self.mappings.loc[parameter_code].copy()
-        else:
-            map1 = self.mappings.loc[self.parameter_code].copy()
+    #     ## Get mapping
+    #     if isinstance(parameter_code, str):
+    #         map1 = self.mappings.loc[parameter_code].copy()
+    #     else:
+    #         map1 = self.mappings.loc[self.parameter_code].copy()
 
-        enconding1 = map1[['scale_factor', 'add_offset', 'dtype', '_FillValue']].dropna().to_dict()
-        if '_FillValue' in enconding1:
-            enconding1['_FillValue'] = int(enconding1['_FillValue'])
+    #     enconding1 = map1[['scale_factor', 'add_offset', 'dtype', '_FillValue']].dropna().to_dict()
+    #     if '_FillValue' in enconding1:
+    #         enconding1['_FillValue'] = int(enconding1['_FillValue'])
 
-        ## Build the dataset
-        datasets = self.datasets
+    #     ## Build the dataset
+    #     datasets = self.datasets
 
-        ds = datasets[parameter_code].copy()
+    #     ds = datasets[parameter_code].copy()
 
-        props = {'encoding': {ds['parameter']: enconding1}}
+    #     props = {'encoding': {ds['parameter']: enconding1}}
 
-        ds.update({'owner': owner, 'product_code': product_code, 'license': data_license, 'attribution': attribution, 'utc_offset': '0H', 'spatial_distribution': spatial_distribution, 'geometry_type': 'Point', 'grouping': grouping, 'method': method, 'description': description, 'properties': props})
+    #     ds.update({'owner': owner, 'product_code': product_code, 'license': data_license, 'attribution': attribution, 'utc_offset': '0H', 'spatial_distribution': spatial_distribution, 'geometry_type': 'Point', 'grouping': grouping, 'method': method, 'description': description, 'properties': props})
 
-        ##  Assign the dataset_id
-        # ds1 = tu.processing.assign_ds_ids([ds])[0]
+    #     ##  Assign the dataset_id
+    #     # ds1 = tu.processing.assign_ds_ids([ds])[0]
 
-        setattr(self, 'datasets', [ds])
-        setattr(self, 'parameter_code', parameter_code)
-        setattr(self, 'param_map', map1)
+    #     setattr(self, 'datasets', [ds])
+    #     setattr(self, 'parameter_code', parameter_code)
+    #     setattr(self, 'param_map', map1)
 
-        return ds
+    #     return ds
 
 
-    def process_dataset(self, remote, processing_code, public_url=None, run_date=None):
-        """
+    # def process_dataset(self, remote, processing_code, public_url=None, run_date=None):
+    #     """
 
-        """
-        ds = self.process_datasets(self.datasets, remote, processing_code, public_url, run_date)
+    #     """
+    #     ds = self.process_datasets(self.datasets, remote, processing_code, public_url, run_date)
 
-        return ds
+    #     return ds
 
 
     def get_results(self):
@@ -192,7 +223,7 @@ class WRF(tu.grid.Grid):
         return res2
 
 
-    def _resample_to_wgs84_grid(self, data):
+    def _resample_to_wgs84_grid(self, data, order=2, min_val=None, max_val=None):
         """
 
         """
@@ -201,10 +232,13 @@ class WRF(tu.grid.Grid):
 
         i1 = Interp(grid_data=res2, grid_time_name='time', grid_x_name='west_east', grid_y_name='south_north', grid_data_name=data_name, grid_crs=self.data_crs)
 
-        new_grid = i1.grid_to_grid(self.grid_res, 4326, order=2)
-        new_grid2 = xr.where(new_grid.precip <= 0, 0, new_grid.precip)
+        new_grid = i1.grid_to_grid(self.grid_res, 4326, order=order)
+        if isinstance(min_val, (int, float)):
+            new_grid = xr.where(new_grid.precip <= min_val, min_val, new_grid.precip)
+        if isinstance(max_val, (int, float)):
+            new_grid = xr.where(new_grid.precip >= max_val, max_val, new_grid.precip)
 
-        new_grid3 = new_grid2.rename({'x': 'lon', 'y': 'lat'})
+        new_grid3 = new_grid.rename({'x': 'lon', 'y': 'lat'})
         new_grid3.name = data_name
 
         return new_grid3

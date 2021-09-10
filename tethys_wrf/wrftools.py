@@ -7,13 +7,12 @@ from __future__ import division
 import copy
 
 import numpy as np
-import pyproj
 from scipy.interpolate import interp1d
 from netCDF4 import num2date
 from pandas import to_datetime
 from xarray.core import indexing
 
-from tethys_wrf import lazy_property, wgs84, gis
+from tethys_wrf import lazy_property
 
 POOL = None
 

@@ -23,6 +23,21 @@ valid_names['lon_var'] = ['lon', 'longitude', 'longitudes', 'lons', 'long']
 valid_names['lat_var'] = ['lat', 'latitude', 'latitudes', 'lats']
 valid_names['time_var'] = ['time', 'times']
 
+param_func_mappings = {'temp_at_2': ['T2'],
+                       'precip_at_0': ['RAINNC'],
+                       'snow_at_0': ['SNOWNC'],
+                       'runoff_at_0': ['SFROFF'],
+                       'recharge_at_0': ['UDROFF'],
+                       'pressure_at_0': ['PSFC'],
+                       'shortwave_rad_at_0': ['SWDOWN'],
+                       'longwave_rad_at_0': ['GLW'],
+                       'heat_flux_at_0': ['GRDFLX'],
+                       'relative_humidity_at_2': ['T2', 'Q2', 'PSFC'],
+                       'wind_speed_at_2': ['U10', 'V10'],
+                       'wind_speed_at_10': ['U10', 'V10'],
+                       # 'reference_et_at_0': ['T2', 'Q2', 'U10', 'V10', 'SWDOWN', 'GLW', 'GRDFLX', 'PSFC', 'ALBEDO']
+                       }
+
 
 def str_in_list(l1, l2):
     """Check if one element of l1 is in l2 and if yes, returns the name of

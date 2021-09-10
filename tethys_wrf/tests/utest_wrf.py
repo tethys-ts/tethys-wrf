@@ -5,6 +5,7 @@ Created on Tue Jul  2 09:25:41 2019
 @author: michaelek
 """
 # import pytest
+import numpy as np
 import os
 import yaml
 import tethys_utils as tu
@@ -17,10 +18,10 @@ pd.options.display.max_columns = 10
 ###############################################
 ### Parameters
 
-base_path = '/media/sdb1/Data/UC/wrf'
-nc1 = 'wrfout_d03_2017-01-07_00_00_00.nc'
+base_path = '/media/nvme1/data/UC/wrf'
+# nc1 = 'wrfout_d03_2017-01-07_00_00_00.nc'
 # nc1 = 'wrfout_d04_2014-02-22_00_00_00.nc'
-nc1 = 'wrfout_d02_*'
+nc1 = 'wrfout_d05_*'
 
 # ncs1 = ['wrfout_d04_2014-02-22_00_00_00.nc', 'wrfout_d04_2014-03-01_00_00_00.nc']
 
@@ -52,8 +53,8 @@ product_code = 'Test 1km v01'
 data_license = "https://creativecommons.org/licenses/by/4.0/"
 attribution = "Data licensed by the NZ Open Data Consortium"
 
-parameter_code = 'temp_at_2'
-parameter_code = 'precip_at_0'
+parameter_codes = ['wind_speed_at_2', 'precip_at_0']
+# parameter_code = 'precip_at_0'
 
 run_date = pd.Timestamp.now('utc').tz_localize(None).round('s')
 run_date = pd.Timestamp(param['source']['dataset_metadata']['run_date'])
@@ -68,11 +69,47 @@ bucket = param['remote']['s3']['bucket']
 
 # data, attrs, encoding, run_date, conn_config, bucket, s3, public_url = inputs[0]
 
+chunk_size = 1000000000
+chunk_size = 1000000
+
+
+def find_time_chunk_size(data, parameter):
+    """
+
+    """
+    time_chunks = [c for c in data[parameter].chunks if isinstance(c, tuple)][0]
+    time_chunk_size = time_chunks[0]
+
+    return time_chunk_size, len(time_chunks)
+
+
+
+
+
+
 
 ########################################
 ### Tests
 
-self = WRF(wrf_nc)
+self = WRF(wrf_nc, parameter_codes)
+
+data = self.data
+
+time_chunk_size, time_chunks = find_time_chunk_size(data, parameter)
+
+total_nbytes = data[parameter].nbytes
+
+nbytes_per = int(total_nbytes/time_chunks)
+
+n_parts = int(np.ceil(total_nbytes/chunk_size))
+
+
+
+
+
+
+
+
 dataset = self.build_dataset(parameter_code, owner, product_code, data_license, attribution)
 data = self.get_results()
 

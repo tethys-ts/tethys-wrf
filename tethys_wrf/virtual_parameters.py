@@ -14,7 +14,19 @@ import numpy as np
 ### Functions
 
 
-def calc_rh2(wrf_xr, method=1):
+def fix_accum(da):
+    """
+
+    """
+    ## Convert from accumultion to cumultive
+    ds2 = da.diff('time', label='lower')
+    ds3 = xr.where(ds2 < 0, da[1:], ds2)
+    ds3['time'] = da['time'][:-1]
+
+    return ds3
+
+
+def calc_rh_2(wrf_xr, method=1):
     """
     Two methods to calc relative humidity at 2 meters. Copied from https://github.com/keenmisty/WRF/blob/master/matlab_scripts/functions/CalRH.m.
     I do not know where the first method comes from, but the second method is the algorithm used in ncl (wrf_rh).
@@ -51,7 +63,7 @@ def calc_rh2(wrf_xr, method=1):
     return rh
 
 
-def calc_wind_speed(wrf_xr, height=2):
+def calc_wind_speed(wrf_xr, height=10):
     """
     Estimate the mean wind speed at 10 or 2 m from the V and U WRF vectors of wind speed. The 2 m method is according to the FAO 56 paper.
 
@@ -79,7 +91,47 @@ def calc_wind_speed(wrf_xr, height=2):
     return ws
 
 
-def calc_temp2(wrf_xr, units='degC'):
+def calc_wind_speed_2(wrf_xr):
+    """
+    Estimate the mean wind speed at 10 or 2 m from the V and U WRF vectors of wind speed. The 2 m method is according to the FAO 56 paper.
+
+    Parameters
+    ----------
+    wrf_xr : xr.Dataset
+        The complete WRF output dataset with V10 and U10.
+    height : int
+        The height for the estimate.
+
+    Returns
+    -------
+    xr.DataArray
+    """
+    ws = calc_wind_speed(wrf_xr, height=2)
+
+    return ws
+
+
+def calc_wind_speed_10(wrf_xr):
+    """
+    Estimate the mean wind speed at 10 or 2 m from the V and U WRF vectors of wind speed. The 2 m method is according to the FAO 56 paper.
+
+    Parameters
+    ----------
+    wrf_xr : xr.Dataset
+        The complete WRF output dataset with V10 and U10.
+    height : int
+        The height for the estimate.
+
+    Returns
+    -------
+    xr.DataArray
+    """
+    ws = calc_wind_speed(wrf_xr, height=10)
+
+    return ws
+
+
+def calc_temp_2(wrf_xr, units='degC'):
     """
 
     """
@@ -93,7 +145,7 @@ def calc_temp2(wrf_xr, units='degC'):
     return t2
 
 
-def calc_surface_pressure(wrf_xr, units='hPa'):
+def calc_surface_pressure_0(wrf_xr, units='hPa'):
     """
 
     """
@@ -109,7 +161,7 @@ def calc_surface_pressure(wrf_xr, units='hPa'):
     return pres
 
 
-def calc_eto(wrf_xr):
+def calc_eto_0(wrf_xr):
     """
 
     """
@@ -143,7 +195,7 @@ def calc_eto(wrf_xr):
     return ETo
 
 
-def calc_precip0(wrf_xr):
+def calc_precip_0(wrf_xr):
     """
 
     """
@@ -151,13 +203,12 @@ def calc_precip0(wrf_xr):
     precip = wrf_xr['RAINNC']
 
     ## Convert from accumultion to cumultive
-    precip1 = precip.diff('time', label='lower')
-    precip2 = xr.where(precip1 < 0, 0, precip1)
+    precip2 = fix_accum(precip)
 
     return precip2
 
 
-def calc_snow0(wrf_xr):
+def calc_snow_0(wrf_xr):
     """
 
     """
@@ -165,13 +216,12 @@ def calc_snow0(wrf_xr):
     precip = wrf_xr['SNOWNC']
 
     ## Convert from accumultion to cumultive
-    precip1 = precip.diff('time', label='lower')
-    precip2 = xr.where(precip1 < 0, 0, precip1)
+    precip2 = fix_accum(precip)
 
     return precip2
 
 
-def calc_runoff0(wrf_xr):
+def calc_runoff_0(wrf_xr):
     """
 
     """
@@ -179,13 +229,12 @@ def calc_runoff0(wrf_xr):
     precip = wrf_xr['SFROFF']
 
     ## Convert from accumultion to cumultive
-    precip1 = precip.diff('time', label='lower')
-    precip2 = xr.where(precip1 < 0, 0, precip1)
+    precip2 = fix_accum(precip)
 
     return precip2
 
 
-def calc_recharge0(wrf_xr):
+def calc_recharge_0(wrf_xr):
     """
 
     """
@@ -193,7 +242,45 @@ def calc_recharge0(wrf_xr):
     precip = wrf_xr['UDROFF']
 
     ## Convert from accumultion to cumultive
-    precip1 = precip.diff('time', label='lower')
-    precip2 = xr.where(precip1 < 0, 0, precip1)
+    precip2 = fix_accum(precip)
+
+    return precip2
+
+
+def calc_shortwave_0(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    precip = wrf_xr['SWDOWN']
+
+    ## Convert from accumultion to cumultive
+    precip2 = fix_accum(precip)
+
+    return precip2
+
+
+def calc_longwave_0(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    precip = wrf_xr['GLW']
+
+    ## Convert from accumultion to cumultive
+    precip2 = fix_accum(precip)
+
+    return precip2
+
+
+def calc_ground_heat_flux_0(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    precip = wrf_xr['GRDFLX']
+
+    ## Convert from accumultion to cumultive
+    precip2 = fix_accum(precip)
 
     return precip2
