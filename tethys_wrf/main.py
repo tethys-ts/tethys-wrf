@@ -13,13 +13,13 @@ import numpy as np
 # from wrf import getvar, interpline, CoordPair, xy_to_ll, ll_to_xy
 # import wrf
 # from tethys_wrf import virtual_parameters as vp
-# import virtual_parameters as vp
+from . import virtual_parameters as vp
 import copy
 # import orjson
 import tethys_utils as tu
 from tethys_wrf import sio
 from hydrointerp import Interp
-from utils import param_func_mappings
+from .utils import param_func_mappings
 from glob import glob
 
 ##############################################
@@ -30,7 +30,7 @@ ds_cols = ['feature', 'parameter', 'frequency_interval', 'aggregation_statistic'
 base_dir = os.path.realpath(os.path.dirname(__file__))
 
 ########################################
-### Main class
+### wrf class
 
 
 class WRF(object):
@@ -54,17 +54,17 @@ class WRF(object):
         if isinstance(wrf_nc, str):
             data_path = wrf_nc
 
-        elif isinstance(wrf_nc, list):
-            if isinstance(wrf_nc[0], str):
-                paths = []
-                [paths.extend(glob(p)) for p in wrf_nc]
-                paths.sort()
-                data_path = paths.copy()
-            else:
-                raise TypeError('If wrf_nc is a list, then it must be a list of str paths.')
+        # elif isinstance(wrf_nc, list):
+        #     if isinstance(wrf_nc[0], str):
+        #         paths = []
+        #         [paths.extend(glob(p)) for p in wrf_nc]
+        #         paths.sort()
+        #         data_path = paths.copy()
+        #     else:
+        #         raise TypeError('If wrf_nc is a list, then it must be a list of str paths.')
 
         else:
-            raise TypeError('wrf_nc must be a str path that xr.open_mfdataset can open or a list of paths.')
+            raise TypeError('wrf_nc must be a str path that xr.open_mfdataset can open.')
 
         ## Get base path
         # if isinstance(wrf_nc, list):
@@ -115,7 +115,7 @@ class WRF(object):
         xr1 = xr1[params]
 
         ### Set attrs
-        # setattr(self, 'base_path', base_path)
+        setattr(self, 'data_path', data_path)
         setattr(self, 'data', xr1)
         # setattr(self, 'mappings', wrf_mapping)
         # setattr(self, 'datasets', dsb)
@@ -186,41 +186,130 @@ class WRF(object):
 
     #     return ds
 
-
-    def get_results(self):
+    def save_results(self, output_path, order=2, min_val=None, max_val=None):
         """
 
         """
-        if not hasattr(self, 'parameter_code'):
-            raise ValueError('Run the build_dataset method prior to the get_results method.')
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
 
-        map1 = self.param_map
+        vars1 = [v for v in list(self.data.variables) if not v in list(self.data.coords)]
+        vars1.sort()
 
-        if isinstance(map1['function'], str):
-            meth = getattr(self.vp, map1['function'])
-            res1 = meth(self.data)
-        else:
-            res1 = self.data[map1['wrf_standard_name']]
+        base_file_name = os.path.split(self.data_path)[1].split('*')[0].split('.nc')[0]
 
-        res1.name = map1['parameter']
+        for v in vars1:
+            file_name = base_file_name + v + '.nc'
+            file_path = os.path.join(output_path, file_name)
 
-        setattr(self, 'param_data', res1)
+            print(file_path)
 
-        _, index = np.unique(res1['time'], return_index=True)
+            v_data = self.data[v].copy()
 
-        res1 = res1.isel(time=index)
+            v_data2 = self._resample_to_wgs84_grid(v_data, order, min_val, max_val)
+            v_data2[v].attrs = self.data[v].attrs.copy()
+            # v_data2[v].encoding = self.data[v].encoding.copy()
+            v_data2.attrs = self.data.attrs.copy()
 
-        ## Reproject data
-        res2 = self._resample_to_wgs84_grid(res1)
+            v_data2.to_netcdf(file_path)
 
-        res1.close()
-        del res1
+        print('-- Finished saving data.')
 
-        map1 = self.param_map.copy()
-        res2 = res2.assign_coords({'height': map1['height']})
-        res2 = res2.expand_dims('height')
 
-        return res2
+#####################################################
+### Processors
+
+
+# def preprocessor(ds):
+#     """
+
+#     """
+#     ## Read variables
+#     # vars1 = list(ds.variables)
+#     # vars1 = [v for v in vars1 if v not in dims][0]
+
+#     ## Determine which parameters can be converted
+#     # height = param_height_mappings[vars1]
+
+#     ## Restructure dims
+#     # ds = ds.assign_coords({'height': height})
+#     ds = ds.rename({'longitude': 'lon', 'latitude': 'lat'})
+#     # ds = ds.expand_dims('height')
+
+#     return ds
+
+
+def postprocessor(ds, parameter_code):
+    """
+
+    """
+    ## Read variables
+
+    ## Read in mapping table
+    mappings = pd.read_csv(os.path.join(base_dir, 'wrf_mappings.csv'))
+    mappings.set_index('parameter_code', inplace=True)
+
+    ## Select the conversion functions
+    m = mappings.loc[parameter_code]
+
+    meth = getattr(vp, m['function'])
+    res1 = meth(ds)
+
+    ds[m['parameter']] = res1
+
+    encoding = {'dtype': m['dtype'], '_FillValue': m['_FillValue']}
+    if not np.isnan(m['scale_factor']):
+        encoding['scale_factor'] = m['scale_factor']
+    if not np.isnan(m['add_offset']):
+        encoding['add_offset'] = m['add_offset']
+
+    ds[m['parameter']].encoding = encoding
+
+    ds = ds.assign_coords({'height': m['height']})
+
+    ds = ds.expand_dims('height')
+
+    return ds
+
+
+
+
+
+
+    # def get_results(self):
+    #     """
+
+    #     """
+    #     if not hasattr(self, 'parameter_code'):
+    #         raise ValueError('Run the build_dataset method prior to the get_results method.')
+
+    #     map1 = self.param_map
+
+    #     if isinstance(map1['function'], str):
+    #         meth = getattr(self.vp, map1['function'])
+    #         res1 = meth(self.data)
+    #     else:
+    #         res1 = self.data[map1['wrf_standard_name']]
+
+    #     res1.name = map1['parameter']
+
+    #     setattr(self, 'param_data', res1)
+
+    #     _, index = np.unique(res1['time'], return_index=True)
+
+    #     res1 = res1.isel(time=index)
+
+    #     ## Reproject data
+    #     res2 = self._resample_to_wgs84_grid(res1)
+
+    #     res1.close()
+    #     del res1
+
+    #     map1 = self.param_map.copy()
+    #     res2 = res2.assign_coords({'height': map1['height']})
+    #     res2 = res2.expand_dims('height')
+
+    #     return res2
 
 
     def _resample_to_wgs84_grid(self, data, order=2, min_val=None, max_val=None):
@@ -228,7 +317,7 @@ class WRF(object):
 
         """
         data_name = data.name
-        res2 = data.drop(['altitude', 'station_id'], errors='ignore').to_dataset()
+        res2 = data.drop(['altitude', 'station_id'], errors='ignore').to_dataset().load()
 
         i1 = Interp(grid_data=res2, grid_time_name='time', grid_x_name='west_east', grid_y_name='south_north', grid_data_name=data_name, grid_crs=self.data_crs)
 
@@ -238,9 +327,7 @@ class WRF(object):
         if isinstance(max_val, (int, float)):
             new_grid = xr.where(new_grid.precip >= max_val, max_val, new_grid.precip)
 
-        new_grid3 = new_grid.rename({'x': 'lon', 'y': 'lat'})
-        new_grid3.name = data_name
+        new_grid3 = new_grid.rename({'x': 'lon', 'y': 'lat', 'precip': data_name})
+        # new_grid3.name = data_name
 
         return new_grid3
-
-

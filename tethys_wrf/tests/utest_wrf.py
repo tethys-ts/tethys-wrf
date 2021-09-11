@@ -21,7 +21,7 @@ pd.options.display.max_columns = 10
 base_path = '/media/nvme1/data/UC/wrf'
 # nc1 = 'wrfout_d03_2017-01-07_00_00_00.nc'
 # nc1 = 'wrfout_d04_2014-02-22_00_00_00.nc'
-nc1 = 'wrfout_d05_*'
+nc1 = 'wrfout_d04_*'
 
 # ncs1 = ['wrfout_d04_2014-02-22_00_00_00.nc', 'wrfout_d04_2014-03-01_00_00_00.nc']
 
@@ -36,8 +36,8 @@ base_dir = os.path.realpath(os.path.dirname(__file__))
 
 ds_cols = ['feature', 'parameter', 'frequency_interval', 'aggregation_statistic', 'units', 'wrf_standard_name', 'cf_standard_name', 'scale_factor']
 
-with open(os.path.join(base_dir, 'parameters.yml')) as param:
-    param = yaml.safe_load(param)
+# with open(os.path.join(base_dir, 'parameters.yml')) as param:
+#     param = yaml.safe_load(param)
 
 # wrf_mapping = pd.read_csv(os.path.join(base_dir, 'wrf_mappings.csv'))
 
@@ -53,15 +53,15 @@ product_code = 'Test 1km v01'
 data_license = "https://creativecommons.org/licenses/by/4.0/"
 attribution = "Data licensed by the NZ Open Data Consortium"
 
-parameter_codes = ['wind_speed_at_2', 'precip_at_0']
+parameter_codes = ['wind_speed_at_2', 'precip_at_0', 'temp_at_2']
 # parameter_code = 'precip_at_0'
 
 run_date = pd.Timestamp.now('utc').tz_localize(None).round('s')
-run_date = pd.Timestamp(param['source']['dataset_metadata']['run_date'])
+# run_date = pd.Timestamp(param['source']['dataset_metadata']['run_date'])
 
-conn_config = param['remote']['s3']['connection_config']
-public_url = param['remote']['file']['connection_config']
-bucket = param['remote']['s3']['bucket']
+# conn_config = param['remote']['s3']['connection_config']
+# public_url = param['remote']['file']['connection_config']
+# bucket = param['remote']['s3']['bucket']
 
 
 # inputs = [(data1.sel(station_id=s).copy(), attrs, encoding, run_date_key, conn_config, bucket, s3, public_url) for s in stn_ids[:90]]
@@ -85,13 +85,15 @@ def find_time_chunk_size(data, parameter):
 
 
 
-
+output_path = os.path.join(base_path, 'temp')
 
 
 ########################################
 ### Tests
 
 self = WRF(wrf_nc, parameter_codes)
+
+self.save_results(output_path)
 
 data = self.data
 
