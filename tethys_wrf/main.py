@@ -163,7 +163,7 @@ class WRF(object):
         vars1 = [v for v in list(self.data.variables) if not v in list(self.data.coords)]
         vars1.sort()
 
-        base_file_name = os.path.split(self.data_path)[1].split('*')[0].split('.nc')[0]
+        base_file_name = os.path.split(self.data_path)[1].split('*')[0].split('[')[0].split('.nc')[0]
 
         for v in vars1:
             file_name = base_file_name + v + '.nc'
