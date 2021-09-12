@@ -14,16 +14,19 @@ import numpy as np
 ### Functions
 
 
-def fix_accum(da):
+def fix_accum(ds):
     """
 
     """
     ## Convert from accumultion to cumultive
-    ds2 = da.diff('time', label='lower')
-    ds3 = xr.where(ds2 < 0, da[1:], ds2)
-    ds3['time'] = da['time'][:-1]
+    # ds2 = da.diff('time', label='lower')
+    # ds3 = xr.where(ds2 < 0, da[1:], ds2)
+    # ds3['time'] = da['time'][:-1]
 
-    return ds3
+    ds1 = ds.diff('time', label='lower')
+    ds2 = xr.where(ds1 < 0, 0, ds1)
+
+    return ds2
 
 
 def calc_rh_2(wrf_xr, method=1):

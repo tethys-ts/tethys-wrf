@@ -114,6 +114,10 @@ class WRF(object):
 
         xr1 = xr1[params]
 
+        ## Remove duplicate times
+        time_bool = xr1.get_index('time').duplicated(keep='first')
+        xr1 = xr1.sel(time=~time_bool)
+
         ### Set attrs
         setattr(self, 'data_path', data_path)
         setattr(self, 'data', xr1)
@@ -128,63 +132,26 @@ class WRF(object):
         return repr(self.data)
 
 
-    # def build_dataset(self, parameter_code, owner, product_code, grouping, data_license, attribution, description='WRF output', method='simulation', spatial_distribution='grid'):
-    #     """
+    def _resample_to_wgs84_grid(self, data, order=2, min_val=None, max_val=None):
+        """
 
-    #     """
-    #     if parameter_code not in self.datasets:
-    #         raise ValueError('parameter_code ' + parameter_code + ' is not available. Check the datasets dict for the available parameter codes.')
+        """
+        data_name = data.name
+        res2 = data.drop(['altitude', 'station_id'], errors='ignore').to_dataset().load()
 
-    #     ## Remove prior stored objects
-    #     if hasattr(self, 'parameter_code'):
-    #         delattr(self, 'parameter_code')
-    #     if hasattr(self, 'param_dataset'):
-    #         delattr(self, 'param_dataset')
-    #     if hasattr(self, 'param_data'):
-    #         delattr(self, 'param_data')
-    #     if hasattr(self, 'param_map'):
-    #         delattr(self, 'param_map')
-    #     if hasattr(self, 'data_dict'):
-    #         delattr(self, 'data_dict')
-    #     if hasattr(self, 'run_date_dict'):
-    #         delattr(self, 'run_date_dict')
+        i1 = Interp(grid_data=res2, grid_time_name='time', grid_x_name='west_east', grid_y_name='south_north', grid_data_name=data_name, grid_crs=self.data_crs)
 
-    #     ## Get mapping
-    #     if isinstance(parameter_code, str):
-    #         map1 = self.mappings.loc[parameter_code].copy()
-    #     else:
-    #         map1 = self.mappings.loc[self.parameter_code].copy()
+        new_grid = i1.grid_to_grid(self.grid_res, 4326, order=order)
+        if isinstance(min_val, (int, float)):
+            new_grid = xr.where(new_grid.precip <= min_val, min_val, new_grid.precip)
+        if isinstance(max_val, (int, float)):
+            new_grid = xr.where(new_grid.precip >= max_val, max_val, new_grid.precip)
 
-    #     enconding1 = map1[['scale_factor', 'add_offset', 'dtype', '_FillValue']].dropna().to_dict()
-    #     if '_FillValue' in enconding1:
-    #         enconding1['_FillValue'] = int(enconding1['_FillValue'])
+        new_grid3 = new_grid.rename({'x': 'lon', 'y': 'lat', 'precip': data_name})
+        # new_grid3.name = data_name
 
-    #     ## Build the dataset
-    #     datasets = self.datasets
+        return new_grid3
 
-    #     ds = datasets[parameter_code].copy()
-
-    #     props = {'encoding': {ds['parameter']: enconding1}}
-
-    #     ds.update({'owner': owner, 'product_code': product_code, 'license': data_license, 'attribution': attribution, 'utc_offset': '0H', 'spatial_distribution': spatial_distribution, 'geometry_type': 'Point', 'grouping': grouping, 'method': method, 'description': description, 'properties': props})
-
-    #     ##  Assign the dataset_id
-    #     # ds1 = tu.processing.assign_ds_ids([ds])[0]
-
-    #     setattr(self, 'datasets', [ds])
-    #     setattr(self, 'parameter_code', parameter_code)
-    #     setattr(self, 'param_map', map1)
-
-    #     return ds
-
-
-    # def process_dataset(self, remote, processing_code, public_url=None, run_date=None):
-    #     """
-
-    #     """
-    #     ds = self.process_datasets(self.datasets, remote, processing_code, public_url, run_date)
-
-    #     return ds
 
     def save_results(self, output_path, order=2, min_val=None, max_val=None):
         """
@@ -312,22 +279,4 @@ def postprocessor(ds, parameter_code):
     #     return res2
 
 
-    def _resample_to_wgs84_grid(self, data, order=2, min_val=None, max_val=None):
-        """
 
-        """
-        data_name = data.name
-        res2 = data.drop(['altitude', 'station_id'], errors='ignore').to_dataset().load()
-
-        i1 = Interp(grid_data=res2, grid_time_name='time', grid_x_name='west_east', grid_y_name='south_north', grid_data_name=data_name, grid_crs=self.data_crs)
-
-        new_grid = i1.grid_to_grid(self.grid_res, 4326, order=order)
-        if isinstance(min_val, (int, float)):
-            new_grid = xr.where(new_grid.precip <= min_val, min_val, new_grid.precip)
-        if isinstance(max_val, (int, float)):
-            new_grid = xr.where(new_grid.precip >= max_val, max_val, new_grid.precip)
-
-        new_grid3 = new_grid.rename({'x': 'lon', 'y': 'lat', 'precip': data_name})
-        # new_grid3.name = data_name
-
-        return new_grid3
