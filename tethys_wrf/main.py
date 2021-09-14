@@ -13,6 +13,7 @@ import numpy as np
 # from wrf import getvar, interpline, CoordPair, xy_to_ll, ll_to_xy
 # import wrf
 # from tethys_wrf import virtual_parameters as vp
+from tethys_utils.misc import parse_data_paths
 from . import virtual_parameters as vp
 import copy
 # import orjson
@@ -38,21 +39,31 @@ class WRF(object):
 
     """
     ## Initialization
-    def __init__(self, wrf_nc, parameter_codes, param_func_mappings=param_func_mappings, process_altitude=False, preprocessor=None):
+    def __init__(self):
         """
 
         """
-        self.load_wrf_grid(wrf_nc, parameter_codes, None, param_func_mappings, process_altitude, preprocessor)
 
         pass
 
 
-    def load_wrf_grid(self, wrf_nc, parameter_codes, chunks=None, param_func_mappings=param_func_mappings, process_altitude=False, preprocessor=None):
+    def parse_paths(self, glob_str, date_format=None, from_date=None, to_date=None):
         """
 
         """
-        if isinstance(wrf_nc, str):
-            data_path = wrf_nc
+        paths = parse_data_paths(glob_str, date_format, from_date, to_date)
+
+        self.source_data_paths = paths
+
+        return paths
+
+
+    def load_wrf_grid(self, parameter_codes, chunks=None, param_func_mappings=param_func_mappings, process_altitude=False, preprocessor=None):
+        """
+
+        """
+        # if isinstance(wrf_nc, str):
+        #     data_path = wrf_nc
 
         # elif isinstance(wrf_nc, list):
         #     if isinstance(wrf_nc[0], str):
@@ -63,8 +74,8 @@ class WRF(object):
         #     else:
         #         raise TypeError('If wrf_nc is a list, then it must be a list of str paths.')
 
-        else:
-            raise TypeError('wrf_nc must be a str path that xr.open_mfdataset can open.')
+        # else:
+        #     raise TypeError('wrf_nc must be a str path that xr.open_mfdataset can open.')
 
         ## Get base path
         # if isinstance(wrf_nc, list):
@@ -74,7 +85,7 @@ class WRF(object):
         # else:
         #     raise TypeError('wrf_nc must be either a list of str or a str.')
 
-        xr1 = sio.open_mf_wrf_dataset(data_path, chunks=chunks, preprocess=preprocessor)
+        xr1 = sio.open_mf_wrf_dataset(self.source_data_paths, chunks=chunks, preprocess=preprocessor)
         xr1 = xr1.drop('xtime', errors='ignore')
 
         ## Get data projection
@@ -119,7 +130,6 @@ class WRF(object):
         xr1 = xr1.sel(time=~time_bool)
 
         ### Set attrs
-        setattr(self, 'data_path', data_path)
         setattr(self, 'data', xr1)
         # setattr(self, 'mappings', wrf_mapping)
         # setattr(self, 'datasets', dsb)
@@ -174,9 +184,9 @@ class WRF(object):
             v_data = self.data[v].copy()
 
             v_data2 = self._resample_to_wgs84_grid(v_data, order, min_val, max_val)
-            v_data2[v].attrs = self.data[v].attrs.copy()
+            # v_data2[v].attrs = self.data[v].attrs.copy()
             # v_data2[v].encoding = self.data[v].encoding.copy()
-            v_data2.attrs = self.data.attrs.copy()
+            # v_data2.attrs = self.data.attrs.copy()
 
             v_data2.to_netcdf(file_path)
 
@@ -277,6 +287,3 @@ def postprocessor(ds, parameter_code):
     #     res2 = res2.expand_dims('height')
 
     #     return res2
-
-
-
