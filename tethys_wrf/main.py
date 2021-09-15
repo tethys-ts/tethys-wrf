@@ -47,11 +47,11 @@ class WRF(object):
         pass
 
 
-    def parse_paths(self, glob_str, date_format=None, from_date=None, to_date=None):
+    def parse_paths(self, glob_obj, date_format=None, from_date=None, to_date=None):
         """
 
         """
-        paths = parse_data_paths(glob_str, date_format, from_date, to_date)
+        paths = parse_data_paths(glob_obj, date_format, from_date, to_date)
 
         self.source_data_paths = paths
 
