@@ -142,28 +142,56 @@ class WRF(object):
         return repr(self.data)
 
 
-    def _resample_to_wgs84_grid(self, data, order=2, min_val=None, max_val=None):
+    def _resample_to_wgs84_grid(self, data, order=2, min_val=None, max_val=None, bbox=None):
         """
 
         """
         data_name = data.name
-        res2 = data.drop(['altitude', 'station_id'], errors='ignore').to_dataset().load()
+        coords = list(data.coords)
 
-        i1 = Interp(grid_data=res2, grid_time_name='time', grid_x_name='west_east', grid_y_name='south_north', grid_data_name=data_name, grid_crs=self.data_crs)
+        if 'height' in coords:
+            grp1 = data.groupby('height')
 
-        new_grid = i1.grid_to_grid(self.grid_res, 4326, order=order)
-        if isinstance(min_val, (int, float)):
-            new_grid = xr.where(new_grid.precip <= min_val, min_val, new_grid.precip)
-        if isinstance(max_val, (int, float)):
-            new_grid = xr.where(new_grid.precip >= max_val, max_val, new_grid.precip)
+            xr_list = []
 
-        new_grid3 = new_grid.rename({'x': 'lon', 'y': 'lat', 'precip': data_name})
-        # new_grid3.name = data_name
+            for h, g in grp1:
+                g1 = g.copy().load().to_dataset()
 
-        return new_grid3
+                i1 = Interp(grid_data=g1, grid_time_name='time', grid_x_name='west_east', grid_y_name='south_north', grid_data_name=data_name, grid_crs=self.data_crs)
+
+                new_grid = i1.grid_to_grid(self.grid_res, 4326, order=order, bbox=bbox)
+                if isinstance(min_val, (int, float)):
+                    new_grid = xr.where(new_grid.precip <= min_val, min_val, new_grid.precip)
+                if isinstance(max_val, (int, float)):
+                    new_grid = xr.where(new_grid.precip >= max_val, max_val, new_grid.precip)
+
+                new_grid3 = new_grid.rename({'x': 'lon', 'y': 'lat', 'precip': data_name})
+                new_grid3 = new_grid3.assign_coords(height=h).expand_dims('height')
+
+                xr_list.append(new_grid3)
+
+            new_grid4 = xr.combine_by_coords(xr_list)
+
+        else:
+            g1 = data.copy().load().to_dataset()
+
+            i1 = Interp(grid_data=g1, grid_time_name='time', grid_x_name='west_east', grid_y_name='south_north', grid_data_name=data_name, grid_crs=self.data_crs)
+
+            new_grid = i1.grid_to_grid(self.grid_res, 4326, order=order, bbox=bbox)
+            if isinstance(min_val, (int, float)):
+                new_grid = xr.where(new_grid.precip <= min_val, min_val, new_grid.precip)
+            if isinstance(max_val, (int, float)):
+                new_grid = xr.where(new_grid.precip >= max_val, max_val, new_grid.precip)
+
+            new_grid4 = new_grid.rename({'x': 'lon', 'y': 'lat', 'precip': data_name})
+
+        if isinstance(bbox, tuple):
+            new_grid4 = new_grid4.sel(lon=slice(bbox[0], bbox[1]), lat=slice(bbox[2], bbox[3]))
+
+        return new_grid4
 
 
-    def save_results(self, output_path, order=2, min_val=None, max_val=None):
+    def save_results(self, output_path, order=2, min_val=None, max_val=None, bbox=None):
         """
 
         """
@@ -181,9 +209,25 @@ class WRF(object):
 
             v_data = self.data[v].copy()
 
-            v_data2 = self._resample_to_wgs84_grid(v_data, order, min_val, max_val)
+            ## Correct the height coord name
+            coords = list(v_data.coords)
+            if len(coords) == 4:
+                height_name = [c for c in coords if c not in ['time', 'x', 'y']][0]
+                v_data = v_data.rename({height_name: 'height'})
+
+            v_data2 = self._resample_to_wgs84_grid(v_data, order, min_val, max_val, bbox)
+
+            ## Determine scale and offset
+            min1 = float(v_data2[v].min())
+            max1 = float(v_data2[v].max())
+
+            scale_factor = (max1 - min1) / (2 ** 16 - 1)
+            add_offset = min1 + 2 ** (16 - 1) * scale_factor
+
+            encoding = {'dtype': 'int16', 'scale_factor': scale_factor, 'add_offset': add_offset, '_FillValue': -9999}
+
             # v_data2[v].attrs = self.data[v].attrs.copy()
-            # v_data2[v].encoding = self.data[v].encoding.copy()
+            v_data2[v].encoding = encoding
             # v_data2.attrs = self.data.attrs.copy()
 
             v_data2.to_netcdf(file_path)
