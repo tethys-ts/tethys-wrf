@@ -170,6 +170,11 @@ def open_wrf_mfdataset(file, process_altitude=False, **kwargs):
 #         setattr(self, 'data_crs', source_crs)
 #         setattr(self, 'grid_res', grid_res)
 
+                # new_grid = i1.grid_to_grid(self.grid_res, 4326, order=order, bbox=bbox)
+                # if isinstance(min_val, (int, float)):
+                #     new_grid = xr.where(new_grid.precip <= min_val, min_val, new_grid.precip)
+                # if isinstance(max_val, (int, float)):
+                #     new_grid = xr.where(new_grid.precip >= max_val, max_val, new_grid.precip)
 
 #     def __repr__(self):
 #         return repr(self.data)
