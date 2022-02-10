@@ -14,6 +14,8 @@ import netCDF4
 import cftime
 
 from tethys_wrf import gis, utils, wgs84, wrftools
+# import gis, utils, wrftools
+from __init__ import wgs84
 
 import xarray as xr
 from xarray.backends.netCDF4_ import NetCDF4DataStore

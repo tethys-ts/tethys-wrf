@@ -1,6 +1,6 @@
 {% set name = "tethys-wrf" %}
-{% set version = "0.2.5" %}
-{% set sha256 = "aae94ef9fe86941d3876bc2c3d37c651d6ebc1f81abc4df1a79ab652c8141b4b" %}
+{% set version = "0.3.0" %}
+# {% set sha256 = "aae94ef9fe86941d3876bc2c3d37c651d6ebc1f81abc4df1a79ab652c8141b4b" %}
 
 # sha256 is the prefered checksum -- you can get it for a file with:
 #  `openssl sha256 <file name>`.
@@ -17,7 +17,7 @@ source:
   # If getting the source from GitHub remove the line above
   # uncomment the line below and modify as needed
   # url: https://github.com/simplejson/{{ name }}/archive/{{ version }}.tar.gz
-  sha256: {{ sha256 }}
+  # sha256: {{ sha256 }}
 
 build:
   # Uncomment the following line if the package is pure python and the recipe is exactly the same for all platforms.
@@ -36,14 +36,12 @@ requirements:
     - setuptools
   run:
     - python=3.8
-    - tethys-utils
-    - xarray=0.16.2
+    - xarray
     - dask
     - shapely
     - pyproj
     - netcdf4
     - toolz
-    - hydrointerp
 
 test:
   imports:

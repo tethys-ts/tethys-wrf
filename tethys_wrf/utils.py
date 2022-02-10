@@ -26,20 +26,20 @@ valid_names['time_var'] = ['time', 'times']
 ds_cols = ['feature', 'parameter', 'frequency_interval', 'aggregation_statistic', 'units', 'wrf_standard_name', 'cf_standard_name', 'scale_factor']
 
 
-param_func_mappings = {'temp_at_2': ['T2'],
-                       'precip_at_0': ['RAINNC'],
-                       'snow_at_0': ['SNOWNC'],
-                       'runoff_at_0': ['SFROFF'],
-                       'recharge_at_0': ['UDROFF'],
-                       'pressure_at_0': ['PSFC'],
-                       'shortwave_rad_at_0': ['SWDOWN'],
-                       'longwave_rad_at_0': ['GLW'],
-                       'heat_flux_at_0': ['GRDFLX'],
-                       'relative_humidity_at_2': ['T2', 'Q2', 'PSFC'],
-                       'wind_speed_at_2': ['U10', 'V10'],
-                       'wind_speed_at_10': ['U10', 'V10'],
-                       # 'reference_et_at_0': ['T2', 'Q2', 'U10', 'V10', 'SWDOWN', 'GLW', 'GRDFLX', 'PSFC', 'ALBEDO']
-                       }
+# param_func_mappings = {'temp_at_2': ['T2'],
+#                        'precip_at_0': ['RAINNC'],
+#                        'snow_at_0': ['SNOWNC'],
+#                        'runoff_at_0': ['SFROFF'],
+#                        'recharge_at_0': ['UDROFF'],
+#                        'pressure_at_0': ['PSFC'],
+#                        'shortwave_rad_at_0': ['SWDOWN'],
+#                        'longwave_rad_at_0': ['GLW'],
+#                        'heat_flux_at_0': ['GRDFLX'],
+#                        'relative_humidity_at_2': ['T2', 'Q2', 'PSFC'],
+#                        'wind_speed_at_2': ['U10', 'V10'],
+#                        'wind_speed_at_10': ['U10', 'V10'],
+#                         'reference_et_at_0': ['T2', 'Q2', 'U10', 'V10', 'SWDOWN', 'GLW', 'GRDFLX', 'PSFC', 'ALBEDO']
+#                        }
 
 # param_file_mappings = {'temp_at_2': ['2m_temperature_*.nc'],
 #                        'precip_at_0': ['total_precipitation_*.nc'],
