@@ -6,6 +6,7 @@ Created on Mon Jan 18 10:32:40 2021
 @author: mike
 """
 import os
+import glob
 # import xarray as xr
 # import pandas as pd
 # import numpy as np
@@ -18,10 +19,14 @@ import os
 # import copy
 # import orjson
 # import tethys_utils as tu
-from tethys_wrf import sio
+from tethys_wrf import sio, utils
 # from hydrointerp import Interp
 # from .utils import param_func_mappings
 # from glob import glob
+import concurrent.futures
+import multiprocessing as mp
+from netCDF4 import Dataset
+from wrf import getvar, interplevel
 
 ##############################################
 ### Parameters
@@ -61,6 +66,76 @@ def open_wrf_mfdataset(file, process_altitude=False, **kwargs):
         xr1.coords['altitude'] = (('south_north', 'west_east'), alt)
 
     return xr1
+
+
+def parse_proj(file, **kwargs):
+    """
+
+    """
+    xr1 = sio.open_wrf_dataset(file, **kwargs)
+
+    proj = xr1.attrs['pyproj_srs']
+
+    xr1.close()
+    del xr1
+
+    return proj
+
+
+def determine_heights(file):
+    """
+
+    """
+    ncfile = Dataset(file)
+    heights = getvar(ncfile, "height_agl").isel(south_north=0, west_east=0).data
+
+    ncfile.close()
+    del ncfile
+
+    return heights
+
+
+def wrf_variable_processing(nc_paths, variables, heights, time_index_bool=None,  max_workers=4, **kwargs):
+    """
+
+    """
+    if isinstance(nc_paths, str):
+        nc_paths1 = glob.glob(nc_paths)
+    elif isinstance(nc_paths, list):
+        nc_paths1 = nc_paths
+
+    ## Determine duplicate times
+    xr1 = open_wrf_mfdataset(nc_paths1)
+
+    time_bool = xr1.get_index('time').duplicated(keep='first')
+
+    xr1.close()
+    del xr1
+
+    if time_bool.any():
+        xr1 = open_wrf_dataset(nc_paths1[0])
+        nc_time_len = len(xr1['time'])
+        time_index_bool = ~time_bool[:nc_time_len]
+        xr1.close()
+        del xr1
+
+    ## Iterate through files
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers, mp_context=mp.get_context("spawn")) as executor:
+        futures = []
+        for nc_path in nc_paths1:
+            f = executor.submit(utils.preprocess_data_structure, nc_path, variables, heights, time_index_bool)
+            futures.append(f)
+        runs = concurrent.futures.wait(futures)
+
+    ## process output
+    new_paths = [r.result() for r in runs[0]]
+    new_paths1 = []
+    for new_path in new_paths:
+        new_paths1.extend(new_path)
+
+    new_paths1.sort()
+
+
 
 
 ########################################

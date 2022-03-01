@@ -3,8 +3,14 @@ Some useful functions
 """
 from __future__ import division
 
+import os
 import numpy as np
-
+from tethys_wrf.main import open_wrf_dataset
+from netCDF4 import Dataset
+from wrf import getvar, interplevel
+import pandas as pd
+import xarray as xr
+import pathlib
 
 # A series of variables and dimension names that Salem will understand
 valid_names = dict()
@@ -25,6 +31,131 @@ valid_names['time_var'] = ['time', 'times']
 
 ds_cols = ['feature', 'parameter', 'frequency_interval', 'aggregation_statistic', 'units', 'wrf_standard_name', 'cf_standard_name', 'scale_factor']
 
+
+wrf_variables = {'temp': {'main': 'tk', 'surface': 'T2', 'surface_height': 1.999},
+                 'u': {'main': 'ua', 'surface': 'U10', 'surface_height': 9.999},
+                 'v': {'main': 'va', 'surface': 'V10', 'surface_height': 9.999},
+                 'rh': {'main': 'rh', 'surface': 'rh2', 'surface_height': 1.999},
+                 'dew_temp': {'main': 'td', 'surface': 'td2', 'surface_height': 1.999},
+                 'psfc': {'main': 'PSFC'},
+                 'precip': {'main': 'RAINNC'},
+                 'snowfall': {'main': 'SNOWNC'},
+                 'runoff': {'main': 'SFROFF'},
+                 'recharge': {'main': 'UDROFF'},
+                 'shortwave': {'main': 'SWDOWN'},
+                 'longwave': {'main': 'GLW'},
+                 'ground_heat_flux': {'main': 'GRDFLX'}}
+
+
+def get_wrf_var(ncfile, varname, times):
+    """
+
+    """
+    t = getvar(ncfile, varname)
+    t = t.drop('Time').expand_dims({'Time': times}).copy()
+
+    for i in range(len(times)):
+        t[{'Time': i}] = getvar(ncfile, varname, timeidx=i)
+
+    return t
+
+
+def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None):
+    """
+
+    """
+    new_paths = []
+    # base_dims = ('time', 'south_north', 'west_east')
+    xr1 = open_wrf_dataset(nc_path)
+
+    ## Get first timestamp for file naming
+    times = xr1['time'].copy()
+    time1 = pd.Timestamp(times.values[0])
+    time1_str = time1.strftime('%Y%m%d%H%M%S')
+
+    ## Get spatial dimensions
+    x = xr1['west_east'].copy().load()
+    y = xr1['south_north'].copy().load()
+
+    xr1.close()
+    del xr1
+
+    ncfile = Dataset(nc_path)
+
+    # h = getvar(ncfile, "height_agl", timeidx=None)
+    h = get_wrf_var(ncfile, "height_agl", times)
+
+    ## Iterate through variables
+    for v in variables:
+        var_dict = wrf_variables[v]
+        xr2 = get_wrf_var(ncfile, var_dict['main'], times)
+        # dims = xr2.dims
+
+        if 'surface' in var_dict:
+            v2 = get_wrf_var(ncfile, var_dict['surface'], times).expand_dims('bottom_top', axis=1)
+            v3 = xr.concat([v2, xr2], dim='bottom_top')
+            h2 = v2.copy()
+            h2[:] = var_dict['surface_height']
+            h3 = xr.concat([h2, h], dim='bottom_top')
+
+            sh = round(var_dict['surface_height'])
+
+            heights2 = [h for h in heights if h >= sh]
+
+            xr2 = interplevel(v3, h3, heights2)
+
+            del v2
+            del v3
+            del h2
+            del h3
+
+            ## Transpose, sort, and rename
+            xr2.name = v
+
+            xr3 = xr2.to_dataset().drop(['XLONG', 'XLAT', 'XTIME'], errors='ignore')
+            xr3 = xr3.assign_coords({'south_north': y, 'west_east': x})
+
+            xr3 = xr3.transpose('Time', 'south_north', 'west_east', 'level')
+            xr3 = xr3.rename({'Time': 'time', 'level': 'height', 'south_north': 'y', 'west_east': 'x'}).sortby(['time', 'y', 'x', 'height'])
+        else:
+            ## Transpose, sort, and rename
+            xr2.name = v
+
+            xr3 = xr2.to_dataset().drop(['XLONG', 'XLAT', 'XTIME'], errors='ignore')
+            xr3 = xr3.assign_coords({'south_north': y, 'west_east': x})
+
+            xr3 = xr3.transpose('Time', 'south_north', 'west_east')
+            xr3 = xr3.rename({'Time': 'time', 'south_north': 'y', 'west_east': 'x'}).sortby(['time', 'y', 'x'])
+
+        ## Remove time duplicates if necessary
+        if time_index_bool is not None:
+            xr3 = xr3.sel(time=time_index_bool)
+
+        ## Save data
+        new_file_name_str = '{var}_proj_{date}.nc'
+        path1 = pathlib.Path(nc_path)
+        base_path = path1.parent
+        new_file_name = new_file_name_str.format(var=v, date=time1_str)
+        new_path = base_path.joinpath(new_file_name)
+        xr3.to_netcdf(new_path, unlimited_dims=['time'])
+        new_paths.append(str(new_path))
+
+        xr2.close()
+        del xr2
+
+        xr3.close()
+        del xr3
+
+    ncfile.close()
+    del ncfile
+
+    h.close()
+    del h
+
+    ## delete old file
+    os.remove(nc_path)
+
+    return new_paths
 
 # param_func_mappings = {'temp_at_2': ['T2'],
 #                        'precip_at_0': ['RAINNC'],
