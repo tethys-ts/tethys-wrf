@@ -903,7 +903,7 @@ def open_wrf_dataset(file, **kwargs):
     return ds
 
 
-def open_mf_wrf_dataset(paths, chunks=None,  compat='no_conflicts', lock=None,
+def open_mf_wrf_dataset(paths, chunks=None,  compat='no_conflicts',
                         preprocess=None):
     """Open multiple WRF files as a single WRF dataset.
 
@@ -960,9 +960,11 @@ def open_mf_wrf_dataset(paths, chunks=None,  compat='no_conflicts', lock=None,
     import dask
     dask.config.set(scheduler='single-threaded')
 
-    if lock is None:
-        lock = NETCDF4_PYTHON_LOCK
-    datasets = [open_wrf_dataset(p, chunks=chunks or {}, lock=lock)
+    # if lock is None:
+    #     lock = NETCDF4_PYTHON_LOCK
+    # datasets = [open_wrf_dataset(p, chunks=chunks or {}, lock=lock)
+                # for p in paths]
+    datasets = [open_wrf_dataset(p, chunks=chunks or {})
                 for p in paths]
     orig_datasets = datasets
 

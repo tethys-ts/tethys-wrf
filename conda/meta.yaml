@@ -1,5 +1,5 @@
 {% set name = "tethys-wrf" %}
-{% set version = "0.3.0" %}
+{% set version = "0.4.2" %}
 # {% set sha256 = "aae94ef9fe86941d3876bc2c3d37c651d6ebc1f81abc4df1a79ab652c8141b4b" %}
 
 # sha256 is the prefered checksum -- you can get it for a file with:
@@ -38,10 +38,11 @@ requirements:
     - python=3.8
     - xarray
     - dask
-    - shapely
+    - pandas
     - pyproj
     - netcdf4
     - toolz
+    - wrf-python
 
 test:
   imports:

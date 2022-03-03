@@ -7,9 +7,9 @@ Created on Mon Jan 18 10:32:40 2021
 """
 import os
 import glob
-# import xarray as xr
-# import pandas as pd
-# import numpy as np
+import xarray as xr
+import pandas as pd
+import numpy as np
 # from netCDF4 import Dataset
 # from wrf import getvar, interpline, CoordPair, xy_to_ll, ll_to_xy
 # import wrf
@@ -95,7 +95,7 @@ def determine_heights(file):
     return heights
 
 
-def wrf_variable_processing(nc_paths, variables, heights, time_index_bool=None,  max_workers=4, **kwargs):
+def wrf_determine_duplicate_times(nc_paths):
     """
 
     """
@@ -104,20 +104,41 @@ def wrf_variable_processing(nc_paths, variables, heights, time_index_bool=None, 
     elif isinstance(nc_paths, list):
         nc_paths1 = nc_paths
 
+    nc_paths1.sort()
+
     ## Determine duplicate times
-    xr1 = open_wrf_mfdataset(nc_paths1)
+    if len(nc_paths1) > 1:
+        xr1 = open_wrf_mfdataset(nc_paths1[:2])
 
-    time_bool = xr1.get_index('time').duplicated(keep='first')
+        time_bool = xr1.get_index('time').duplicated(keep='first')
 
-    xr1.close()
-    del xr1
-
-    if time_bool.any():
-        xr1 = open_wrf_dataset(nc_paths1[0])
-        nc_time_len = len(xr1['time'])
-        time_index_bool = ~time_bool[:nc_time_len]
         xr1.close()
         del xr1
+
+        time_len = int(len(time_bool)/2)
+        time_index_bool = ~time_bool[time_len:]
+    else:
+        raise ValueError('nc_paths must have > 1 files.')
+
+    return time_index_bool
+
+
+def wrf_variable_processing(nc_paths, variables, heights, max_workers=4, **kwargs):
+    """
+
+    """
+    if isinstance(nc_paths, str):
+        nc_paths1 = glob.glob(nc_paths)
+    elif isinstance(nc_paths, list):
+        nc_paths1 = nc_paths
+
+    nc_paths1.sort()
+
+    ## Determine duplicate times
+    if len(nc_paths1) > 1:
+        time_index_bool = wrf_determine_duplicate_times(nc_paths1)
+    else:
+        time_index_bool = None
 
     ## Iterate through files
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers, mp_context=mp.get_context("spawn")) as executor:
@@ -134,6 +155,8 @@ def wrf_variable_processing(nc_paths, variables, heights, time_index_bool=None, 
         new_paths1.extend(new_path)
 
     new_paths1.sort()
+
+    return new_paths1
 
 
 

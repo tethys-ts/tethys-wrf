@@ -102,7 +102,7 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
 
             heights2 = [h for h in heights if h >= sh]
 
-            xr2 = interplevel(v3, h3, heights2)
+            xr2 = interplevel(v3, h3, heights2, squeeze=False)
 
             del v2
             del v3
