@@ -124,42 +124,6 @@ def wrf_determine_duplicate_times(nc_paths):
     return time_index_bool
 
 
-def wrf_variable_processing(nc_paths, variables, heights, max_workers=4, **kwargs):
-    """
-
-    """
-    if isinstance(nc_paths, str):
-        nc_paths1 = glob.glob(nc_paths)
-    elif isinstance(nc_paths, list):
-        nc_paths1 = nc_paths
-
-    nc_paths1.sort()
-
-    ## Determine duplicate times
-    if len(nc_paths1) > 1:
-        time_index_bool = wrf_determine_duplicate_times(nc_paths1)
-    else:
-        time_index_bool = None
-
-    ## Iterate through files
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers, mp_context=mp.get_context("spawn")) as executor:
-        futures = []
-        for nc_path in nc_paths1:
-            f = executor.submit(utils.preprocess_data_structure, nc_path, variables, heights, time_index_bool)
-            futures.append(f)
-        runs = concurrent.futures.wait(futures)
-
-    ## process output
-    new_paths = [r.result() for r in runs[0]]
-    new_paths1 = []
-    for new_path in new_paths:
-        new_paths1.extend(new_path)
-
-    new_paths1.sort()
-
-    return new_paths1
-
-
 def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None):
     """
 
@@ -189,6 +153,7 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
     for v in variables:
         var_dict = utils.wrf_variables[v]
         xr2 = utils.get_wrf_var(ncfile, var_dict['main'], times)
+        proj = xr2.attrs.pop('projection').proj4()
         # dims = xr2.dims
 
         if 'surface' in var_dict:
@@ -211,6 +176,7 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
 
             ## Transpose, sort, and rename
             xr2.name = v
+            _ = [xr2.attrs.pop(a) for a in ['projection', 'missing_value', '_FillValue', 'stagger'] if a in xr2.attrs]
 
             xr3 = xr2.to_dataset().drop(['XLONG', 'XLAT', 'XTIME'], errors='ignore')
             xr3 = xr3.assign_coords({'south_north': y, 'west_east': x})
@@ -220,6 +186,7 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
         else:
             ## Transpose, sort, and rename
             xr2.name = v
+            _ = [xr2.attrs.pop(a) for a in ['projection', 'missing_value', '_FillValue', 'stagger'] if a in xr2.attrs]
 
             xr3 = xr2.to_dataset().drop(['XLONG', 'XLAT', 'XTIME'], errors='ignore')
             xr3 = xr3.assign_coords({'south_north': y, 'west_east': x})
@@ -230,6 +197,8 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
         ## Remove time duplicates if necessary
         if time_index_bool is not None:
             xr3 = xr3.sel(time=time_index_bool)
+
+        xr3.attrs = {'proj4': proj}
 
         ## Save data
         new_file_name_str = '{var}_proj_{date}.nc'
@@ -256,6 +225,46 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
     os.remove(nc_path)
 
     return new_paths
+
+
+
+def wrf_variable_processing(nc_paths, variables, heights, max_workers=4, **kwargs):
+    """
+
+    """
+    if isinstance(nc_paths, str):
+        nc_paths1 = glob.glob(nc_paths)
+    elif isinstance(nc_paths, list):
+        nc_paths1 = nc_paths
+
+    nc_paths1.sort()
+
+    ## Determine duplicate times
+    if len(nc_paths1) > 1:
+        time_index_bool = wrf_determine_duplicate_times(nc_paths1)
+    else:
+        time_index_bool = None
+
+    ## Iterate through files
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers, mp_context=mp.get_context("spawn")) as executor:
+        futures = []
+        for nc_path in nc_paths1:
+            f = executor.submit(preprocess_data_structure, nc_path, variables, heights, time_index_bool)
+            futures.append(f)
+        runs = concurrent.futures.wait(futures)
+
+    ## process output
+    new_paths = [r.result() for r in runs[0]]
+    new_paths1 = []
+    for new_path in new_paths:
+        new_paths1.extend(new_path)
+
+    new_paths1.sort()
+
+    return new_paths1
+
+
+
 
 
 ########################################

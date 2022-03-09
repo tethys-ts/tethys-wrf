@@ -13,7 +13,8 @@ import numpy as np
 import netCDF4
 import cftime
 
-from tethys_wrf import gis, utils, wgs84, wrftools
+from tethys_wrf import gis, utils, wrftools
+from tethys_wrf.utils import wgs84
 # import gis, utils, wrftools
 # from __init__ import wgs84
 

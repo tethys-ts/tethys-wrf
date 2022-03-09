@@ -23,8 +23,8 @@ except ImportError:
     has_gdal = False
 
 # Locals
-from tethys_wrf import lazy_property, wgs84
-# from __init__ import lazy_property, wgs84
+from tethys_wrf.utils import lazy_property, wgs84
+# from utils import lazy_property, wgs84
 
 try:
     crs_type = pyproj.crs.CRS

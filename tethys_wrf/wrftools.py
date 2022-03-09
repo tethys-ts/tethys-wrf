@@ -12,8 +12,8 @@ from netCDF4 import num2date
 from pandas import to_datetime
 from xarray.core import indexing
 
-from tethys_wrf import lazy_property
-# from __init__ import lazy_property
+from tethys_wrf.utils import lazy_property
+# from utils import lazy_property
 
 POOL = None
 

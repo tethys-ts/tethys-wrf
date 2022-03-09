@@ -189,10 +189,10 @@ def calc_dew_temp(wrf_xr, units='degC'):
     """
     t2 = wrf_xr['dew_temp']
 
-    if units == 'degC':
-        t2 = t2 - 273.15
-    elif units != 'K':
-        raise ValueError('units must be either degC or K.')
+    # if units == 'degC':
+    #     t2 = t2 - 273.15
+    # elif units != 'K':
+    #     raise ValueError('units must be either degC or K.')
 
     return t2
 
