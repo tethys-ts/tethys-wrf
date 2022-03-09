@@ -14,7 +14,7 @@ from distutils.version import LooseVersion
 # External libs
 import pyproj
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator, RectBivariateSpline
+# from scipy.interpolate import RegularGridInterpolator, RectBivariateSpline
 
 try:
     from osgeo import osr
@@ -873,181 +873,181 @@ class Grid(object):
         else:
             return out_data
 
-    def map_gridded_data(self, data, grid=None, interp='nearest',
-                         ks=3, out=None):
-        """Reprojects any structured data onto the local grid.
+    # def map_gridded_data(self, data, grid=None, interp='nearest',
+    #                      ks=3, out=None):
+    #     """Reprojects any structured data onto the local grid.
 
-        The z and time dimensions of the data (if provided) are conserved, but
-        the projected data will have the x, y dimensions of the local grid.
+    #     The z and time dimensions of the data (if provided) are conserved, but
+    #     the projected data will have the x, y dimensions of the local grid.
 
-        Currently, nearest neighbor, linear, and spline interpolation are
-        available. The dtype of the input data is guaranteed to be conserved,
-        except for int which will be converted to floats if non nearest
-        neighbor interpolation is asked.
+    #     Currently, nearest neighbor, linear, and spline interpolation are
+    #     available. The dtype of the input data is guaranteed to be conserved,
+    #     except for int which will be converted to floats if non nearest
+    #     neighbor interpolation is asked.
 
-        Parameters
-        ----------
-        data : ndarray
-            an ndarray of dimensions 2, 3, or 4, the two last ones being y, x.
-        grid : Grid
-            a Grid instance matching the data
-        interp : str
-            'nearest' (default), 'linear', or 'spline'
-        ks : int
-            Degree of the bivariate spline. Default is 3.
-        missing : int
-            integer value to attribute to invalid data (for integer data
-            only, floats invalids are forced to NaNs)
-        out : ndarray
-            output array to fill instead of creating a new one (useful for
-            overwriting stuffs)
+    #     Parameters
+    #     ----------
+    #     data : ndarray
+    #         an ndarray of dimensions 2, 3, or 4, the two last ones being y, x.
+    #     grid : Grid
+    #         a Grid instance matching the data
+    #     interp : str
+    #         'nearest' (default), 'linear', or 'spline'
+    #     ks : int
+    #         Degree of the bivariate spline. Default is 3.
+    #     missing : int
+    #         integer value to attribute to invalid data (for integer data
+    #         only, floats invalids are forced to NaNs)
+    #     out : ndarray
+    #         output array to fill instead of creating a new one (useful for
+    #         overwriting stuffs)
 
-        Returns
-        -------
-        A projected ndarray of the data, in ``self`` coordinates.
-        """
+    #     Returns
+    #     -------
+    #     A projected ndarray of the data, in ``self`` coordinates.
+    #     """
 
-        if grid is None:
-            try:
-                grid = data.salem.grid  # try xarray
-            except AttributeError:
-                pass
+    #     if grid is None:
+    #         try:
+    #             grid = data.salem.grid  # try xarray
+    #         except AttributeError:
+    #             pass
 
-        # Input checks
-        if not isinstance(grid, Grid):
-            raise ValueError('grid should be a Grid instance')
+    #     # Input checks
+    #     if not isinstance(grid, Grid):
+    #         raise ValueError('grid should be a Grid instance')
 
-        try:  # in case someone gave an xarray dataarray
-            data = data.values
-        except AttributeError:
-            pass
+    #     try:  # in case someone gave an xarray dataarray
+    #         data = data.values
+    #     except AttributeError:
+    #         pass
 
-        try:  # in case someone gave a masked array (won't work with scipy)
-            data = data.filled(np.nan)
-        except AttributeError:
-            pass
+    #     try:  # in case someone gave a masked array (won't work with scipy)
+    #         data = data.filled(np.nan)
+    #     except AttributeError:
+    #         pass
 
-        in_shape = data.shape
-        ndims = len(in_shape)
-        if (ndims < 2) or (ndims > 4):
-            raise ValueError('data dimension not accepted')
-        if (in_shape[-1] != grid.nx) or (in_shape[-2] != grid.ny):
-            raise ValueError('data dimension not compatible')
+    #     in_shape = data.shape
+    #     ndims = len(in_shape)
+    #     if (ndims < 2) or (ndims > 4):
+    #         raise ValueError('data dimension not accepted')
+    #     if (in_shape[-1] != grid.nx) or (in_shape[-2] != grid.ny):
+    #         raise ValueError('data dimension not compatible')
 
-        interp = interp.lower()
+    #     interp = interp.lower()
 
-        use_nn = False
-        if interp == 'nearest':
-            use_nn = True
+    #     use_nn = False
+    #     if interp == 'nearest':
+    #         use_nn = True
 
-        # Transform the local grid into the input grid (backwards transform)
-        # Work in center grid cause that's what we need
-        # TODO: this stage could be optimized when many variables need transfo
-        i, j = self.center_grid.ij_coordinates
-        oi, oj = grid.center_grid.transform(i, j, crs=self.center_grid,
-                                            nearest=use_nn, maskout=False)
-        pv = np.nonzero((oi >= 0) & (oi < grid.nx) &
-                        (oj >= 0) & (oj < grid.ny))
+    #     # Transform the local grid into the input grid (backwards transform)
+    #     # Work in center grid cause that's what we need
+    #     # TODO: this stage could be optimized when many variables need transfo
+    #     i, j = self.center_grid.ij_coordinates
+    #     oi, oj = grid.center_grid.transform(i, j, crs=self.center_grid,
+    #                                         nearest=use_nn, maskout=False)
+    #     pv = np.nonzero((oi >= 0) & (oi < grid.nx) &
+    #                     (oj >= 0) & (oj < grid.ny))
 
-        # Prepare the output
-        if out is not None:
-            out_data = np.ma.asarray(out)
-        else:
-            out_shape = list(in_shape)
-            out_shape[-2:] = [self.ny, self.nx]
-            if (data.dtype.kind == 'i') and (interp == 'nearest'):
-                # We dont do integer arithmetics other than nearest
-                out_data = np.ma.masked_all(out_shape, dtype=data.dtype)
-            elif data.dtype.kind == 'i':
-                out_data = np.ma.masked_all(out_shape, dtype=float)
-            else:
-                out_data = np.ma.masked_all(out_shape, dtype=data.dtype)
+    #     # Prepare the output
+    #     if out is not None:
+    #         out_data = np.ma.asarray(out)
+    #     else:
+    #         out_shape = list(in_shape)
+    #         out_shape[-2:] = [self.ny, self.nx]
+    #         if (data.dtype.kind == 'i') and (interp == 'nearest'):
+    #             # We dont do integer arithmetics other than nearest
+    #             out_data = np.ma.masked_all(out_shape, dtype=data.dtype)
+    #         elif data.dtype.kind == 'i':
+    #             out_data = np.ma.masked_all(out_shape, dtype=float)
+    #         else:
+    #             out_data = np.ma.masked_all(out_shape, dtype=data.dtype)
 
-        # Spare us the trouble
-        if len(pv[0]) == 0:
-            return out_data
+    #     # Spare us the trouble
+    #     if len(pv[0]) == 0:
+    #         return out_data
 
-        i, j, oi, oj = i[pv], j[pv], oi[pv], oj[pv]
+    #     i, j, oi, oj = i[pv], j[pv], oi[pv], oj[pv]
 
-        # Interpolate
-        if interp == 'nearest':
-            if out is not None:
-                if ndims > 2:
-                    raise ValueError('Need 2D for now.')
-                vok = np.isfinite(data[oj, oi])
-                out_data[j[vok], i[vok]] = data[oj[vok], oi[vok]]
-            else:
-                out_data[..., j, i] = data[..., oj, oi]
-        elif interp == 'linear':
-            points = (np.arange(grid.ny), np.arange(grid.nx))
-            if ndims == 2:
-                f = RegularGridInterpolator(points, data, bounds_error=False)
-                if out is not None:
-                    tmp = f((oj, oi))
-                    vok = np.isfinite(tmp)
-                    out_data[j[vok], i[vok]] = tmp[vok]
-                else:
-                    out_data[j, i] = f((oj, oi))
-            if ndims == 3:
-                for dimi, cdata in enumerate(data):
-                    f = RegularGridInterpolator(points, cdata,
-                                                bounds_error=False)
-                    if out is not None:
-                        tmp = f((oj, oi))
-                        vok = np.isfinite(tmp)
-                        out_data[dimi, j[vok], i[vok]] = tmp[vok]
-                    else:
-                        out_data[dimi, j, i] = f((oj, oi))
-            if ndims == 4:
-                for dimj, cdata in enumerate(data):
-                    for dimi, ccdata in enumerate(cdata):
-                        f = RegularGridInterpolator(points, ccdata,
-                                                    bounds_error=False)
-                        if out is not None:
-                            tmp = f((oj, oi))
-                            vok = np.isfinite(tmp)
-                            out_data[dimj, dimi, j[vok], i[vok]] = tmp[vok]
-                        else:
-                            out_data[dimj, dimi, j, i] = f((oj, oi))
-        elif interp == 'spline':
-            px, py = np.arange(grid.ny), np.arange(grid.nx)
-            if ndims == 2:
-                f = RectBivariateSpline(px, py, data, kx=ks, ky=ks)
-                if out is not None:
-                    tmp = f(oj, oi, grid=False)
-                    vok = np.isfinite(tmp)
-                    out_data[j[vok], i[vok]] = tmp[vok]
-                else:
-                    out_data[j, i] = f(oj, oi, grid=False)
-            if ndims == 3:
-                for dimi, cdata in enumerate(data):
-                    f = RectBivariateSpline(px, py, cdata, kx=ks, ky=ks)
-                    if out is not None:
-                        tmp = f(oj, oi, grid=False)
-                        vok = np.isfinite(tmp)
-                        out_data[dimi, j[vok], i[vok]] = tmp[vok]
-                    else:
-                        out_data[dimi, j, i] = f(oj, oi, grid=False)
-            if ndims == 4:
-                for dimj, cdata in enumerate(data):
-                    for dimi, ccdata in enumerate(cdata):
-                        f = RectBivariateSpline(px, py, ccdata, kx=ks, ky=ks)
-                        if out is not None:
-                            tmp = f(oj, oi, grid=False)
-                            vok = np.isfinite(tmp)
-                            out_data[dimj, dimi, j[vok], i[vok]] = tmp[vok]
-                        else:
-                            out_data[dimj, dimi, j, i] = f(oj, oi, grid=False)
-        else:
-            msg = 'interpolation not understood: {}'.format(interp)
-            raise ValueError(msg)
+    #     # Interpolate
+    #     if interp == 'nearest':
+    #         if out is not None:
+    #             if ndims > 2:
+    #                 raise ValueError('Need 2D for now.')
+    #             vok = np.isfinite(data[oj, oi])
+    #             out_data[j[vok], i[vok]] = data[oj[vok], oi[vok]]
+    #         else:
+    #             out_data[..., j, i] = data[..., oj, oi]
+    #     elif interp == 'linear':
+    #         points = (np.arange(grid.ny), np.arange(grid.nx))
+    #         if ndims == 2:
+    #             f = RegularGridInterpolator(points, data, bounds_error=False)
+    #             if out is not None:
+    #                 tmp = f((oj, oi))
+    #                 vok = np.isfinite(tmp)
+    #                 out_data[j[vok], i[vok]] = tmp[vok]
+    #             else:
+    #                 out_data[j, i] = f((oj, oi))
+    #         if ndims == 3:
+    #             for dimi, cdata in enumerate(data):
+    #                 f = RegularGridInterpolator(points, cdata,
+    #                                             bounds_error=False)
+    #                 if out is not None:
+    #                     tmp = f((oj, oi))
+    #                     vok = np.isfinite(tmp)
+    #                     out_data[dimi, j[vok], i[vok]] = tmp[vok]
+    #                 else:
+    #                     out_data[dimi, j, i] = f((oj, oi))
+    #         if ndims == 4:
+    #             for dimj, cdata in enumerate(data):
+    #                 for dimi, ccdata in enumerate(cdata):
+    #                     f = RegularGridInterpolator(points, ccdata,
+    #                                                 bounds_error=False)
+    #                     if out is not None:
+    #                         tmp = f((oj, oi))
+    #                         vok = np.isfinite(tmp)
+    #                         out_data[dimj, dimi, j[vok], i[vok]] = tmp[vok]
+    #                     else:
+    #                         out_data[dimj, dimi, j, i] = f((oj, oi))
+    #     elif interp == 'spline':
+    #         px, py = np.arange(grid.ny), np.arange(grid.nx)
+    #         if ndims == 2:
+    #             f = RectBivariateSpline(px, py, data, kx=ks, ky=ks)
+    #             if out is not None:
+    #                 tmp = f(oj, oi, grid=False)
+    #                 vok = np.isfinite(tmp)
+    #                 out_data[j[vok], i[vok]] = tmp[vok]
+    #             else:
+    #                 out_data[j, i] = f(oj, oi, grid=False)
+    #         if ndims == 3:
+    #             for dimi, cdata in enumerate(data):
+    #                 f = RectBivariateSpline(px, py, cdata, kx=ks, ky=ks)
+    #                 if out is not None:
+    #                     tmp = f(oj, oi, grid=False)
+    #                     vok = np.isfinite(tmp)
+    #                     out_data[dimi, j[vok], i[vok]] = tmp[vok]
+    #                 else:
+    #                     out_data[dimi, j, i] = f(oj, oi, grid=False)
+    #         if ndims == 4:
+    #             for dimj, cdata in enumerate(data):
+    #                 for dimi, ccdata in enumerate(cdata):
+    #                     f = RectBivariateSpline(px, py, ccdata, kx=ks, ky=ks)
+    #                     if out is not None:
+    #                         tmp = f(oj, oi, grid=False)
+    #                         vok = np.isfinite(tmp)
+    #                         out_data[dimj, dimi, j[vok], i[vok]] = tmp[vok]
+    #                     else:
+    #                         out_data[dimj, dimi, j, i] = f(oj, oi, grid=False)
+    #     else:
+    #         msg = 'interpolation not understood: {}'.format(interp)
+    #         raise ValueError(msg)
 
-        # we have to catch a warning for an unexplained reason
-        with warnings.catch_warnings():
-            mess = "invalid value encountered in isfinite"
-            warnings.filterwarnings("ignore", message=mess)
-            out_data = np.ma.masked_invalid(out_data)
-        return out_data
+    #     # we have to catch a warning for an unexplained reason
+    #     with warnings.catch_warnings():
+    #         mess = "invalid value encountered in isfinite"
+    #         warnings.filterwarnings("ignore", message=mess)
+    #         out_data = np.ma.masked_invalid(out_data)
+    #     return out_data
 
     def region_of_interest(self, shape=None, geometry=None, grid=None,
                            corners=None, crs=wgs84, roi=None,

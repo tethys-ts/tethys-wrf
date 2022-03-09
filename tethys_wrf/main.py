@@ -41,30 +41,30 @@ import pathlib
 ### Functions
 
 
-def open_wrf_dataset(file, process_altitude=False, **kwargs):
+def open_wrf_dataset(file, **kwargs):
     """
 
     """
     xr1 = sio.open_wrf_dataset(file, **kwargs)
     xr1 = xr1.drop('xtime', errors='ignore')
 
-    if process_altitude:
-        alt = xr1['HGT'].isel(time=0)
-        xr1.coords['altitude'] = (('south_north', 'west_east'), alt)
+    xr1 = xr1.assign_coords(soil_layers=-xr1['ZS'].isel(time=0).drop('time'))
+
+    # if process_altitude:
+    #     alt = xr1['HGT'].isel(time=0)
+    #     xr1.coords['altitude'] = (('south_north', 'west_east'), alt)
 
     return xr1
 
 
-def open_wrf_mfdataset(file, process_altitude=False, **kwargs):
+def open_wrf_mfdataset(file, **kwargs):
     """
 
     """
     xr1 = sio.open_mf_wrf_dataset(file, **kwargs)
     xr1 = xr1.drop('xtime', errors='ignore')
 
-    if process_altitude:
-        alt = xr1['HGT'].isel(time=0)
-        xr1.coords['altitude'] = (('south_north', 'west_east'), alt)
+    xr1 = xr1.assign_coords(soil_layers=-xr1['ZS'].isel(time=0).drop('time'))
 
     return xr1
 
@@ -141,9 +141,6 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
     x = xr1['west_east'].copy().load()
     y = xr1['south_north'].copy().load()
 
-    xr1.close()
-    del xr1
-
     ncfile = Dataset(nc_path)
 
     # h = getvar(ncfile, "height_agl", timeidx=None)
@@ -152,9 +149,12 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
     ## Iterate through variables
     for v in variables:
         var_dict = utils.wrf_variables[v]
-        xr2 = utils.get_wrf_var(ncfile, var_dict['main'], times)
-        proj = xr2.attrs.pop('projection').proj4()
-        # dims = xr2.dims
+
+        if 'soil' in v:
+            xr2 = xr1[var_dict['main']].rename({'soil_layers': 'height'}).copy().load()
+        else:
+            xr2 = utils.get_wrf_var(ncfile, var_dict['main'], times)
+            proj = xr2.attrs.pop('projection').proj4()
 
         if 'surface' in var_dict:
             v2 = utils.get_wrf_var(ncfile, var_dict['surface'], times).expand_dims('bottom_top', axis=1)
@@ -188,11 +188,14 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
             xr2.name = v
             _ = [xr2.attrs.pop(a) for a in ['projection', 'missing_value', '_FillValue', 'stagger'] if a in xr2.attrs]
 
-            xr3 = xr2.to_dataset().drop(['XLONG', 'XLAT', 'XTIME'], errors='ignore')
-            xr3 = xr3.assign_coords({'south_north': y, 'west_east': x})
-
-            xr3 = xr3.transpose('Time', 'south_north', 'west_east')
-            xr3 = xr3.rename({'Time': 'time', 'south_north': 'y', 'west_east': 'x'}).sortby(['time', 'y', 'x'])
+            xr3 = xr2.to_dataset().drop(['XLONG', 'XLAT', 'XTIME', 'lat', 'lon'], errors='ignore')
+            if 'west_east' not in xr3:
+                xr3 = xr3.assign_coords({'south_north': y, 'west_east': x}).rename({'Time': 'time'})
+                xr3 = xr3.transpose('time', 'south_north', 'west_east')
+                xr3 = xr3.rename({'south_north': 'y', 'west_east': 'x'}).sortby(['time', 'y', 'x'])
+            else:
+                xr3 = xr3.transpose('time', 'south_north', 'west_east', 'height')
+                xr3 = xr3.rename({'south_north': 'y', 'west_east': 'x'}).sortby(['time', 'y', 'x', 'height'])
 
         ## Remove time duplicates if necessary
         if time_index_bool is not None:
@@ -220,6 +223,9 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
 
     h.close()
     del h
+
+    xr1.close()
+    del xr1
 
     ## delete old file
     os.remove(nc_path)

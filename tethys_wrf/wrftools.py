@@ -7,7 +7,7 @@ from __future__ import division
 import copy
 
 import numpy as np
-from scipy.interpolate import interp1d
+# from scipy.interpolate import interp1d
 from netCDF4 import num2date
 from pandas import to_datetime
 from xarray.core import indexing
@@ -487,68 +487,68 @@ var_classes.extend([cls.__name__ for cls in
 var_classes.remove('AccumulatedVariable')
 
 
-def _interp1d(args):
-    f = interp1d(args[0], args[1], fill_value=args[3],
-                 bounds_error=False)
-    return f(args[2])
+# def _interp1d(args):
+#     f = interp1d(args[0], args[1], fill_value=args[3],
+#                  bounds_error=False)
+#     return f(args[2])
 
 
-def interp3d(data, zcoord, levels, fill_value=np.NaN,
-             use_multiprocessing=True):
-    """Interpolate on the first dimension of a 3d var
+# def interp3d(data, zcoord, levels, fill_value=np.NaN,
+#              use_multiprocessing=True):
+#     """Interpolate on the first dimension of a 3d var
 
-    Useful for WRF pressure or geopotential levels
+#     Useful for WRF pressure or geopotential levels
 
-    Parameters
-    ----------
-    data: ndarrad
-      3d or 4d array of the data to interpolate
-    zcoord: ndarray
-      same dims as data, the z coordinates of the data points
-    levels: 1darray
-      the levels at which to interpolate
-    fill_value : np.NaN or 'extrapolate', optional
-      how to handle levels below the topography. Default is to mark them
-      as invalid, but you might want the have them extrapolated.
-    use_multiprocessing: bool
-      set to false if, for some reason, you don't want to use mp
+#     Parameters
+#     ----------
+#     data: ndarrad
+#       3d or 4d array of the data to interpolate
+#     zcoord: ndarray
+#       same dims as data, the z coordinates of the data points
+#     levels: 1darray
+#       the levels at which to interpolate
+#     fill_value : np.NaN or 'extrapolate', optional
+#       how to handle levels below the topography. Default is to mark them
+#       as invalid, but you might want the have them extrapolated.
+#     use_multiprocessing: bool
+#       set to false if, for some reason, you don't want to use mp
 
-    Returns
-    -------
-    a ndarray, with the first dimension now begin of shape nlevels
-    """
+#     Returns
+#     -------
+#     a ndarray, with the first dimension now begin of shape nlevels
+#     """
 
-    ndims = len(data.shape)
-    if ndims == 4:
-        out = []
-        for d, z in zip(data, zcoord):
-            out.append(np.expand_dims(interp3d(d, z, levels,
-                                               fill_value=fill_value), 0))
-        return np.concatenate(out, axis=0)
-    if ndims != 3:
-        raise ValueError('ndims must be 3')
+#     ndims = len(data.shape)
+#     if ndims == 4:
+#         out = []
+#         for d, z in zip(data, zcoord):
+#             out.append(np.expand_dims(interp3d(d, z, levels,
+#                                                fill_value=fill_value), 0))
+#         return np.concatenate(out, axis=0)
+#     if ndims != 3:
+#         raise ValueError('ndims must be 3')
 
-    if use_multiprocessing:
-        inp = []
-        for j in range(data.shape[-2]):
-            for i in range(data.shape[-1]):
-                inp.append((zcoord[:, j, i], data[:, j, i], levels,
-                            fill_value))
-        _init_pool()
-        out = POOL.map(_interp1d, inp, chunksize=1000)
-        out = np.asarray(out).T
-        out = out.reshape((len(levels), data.shape[-2], data.shape[-1]))
-    else:
-        # TODO: there got to be a faster way to do this
-        # same problem: http://stackoverflow.com/questions/27622808/
-        # fast-3d-interpolation-of-atmospheric-data-in-numpy-scipy
-        out = np.zeros((len(levels), data.shape[-2], data.shape[-1]))
-        for i in range(data.shape[-1]):
-            for j in range(data.shape[-2]):
-                f = interp1d(zcoord[:, j, i], data[:, j, i],
-                             fill_value=fill_value, bounds_error=False)
-                out[:, j, i] = f(levels)
-    return out
+#     if use_multiprocessing:
+#         inp = []
+#         for j in range(data.shape[-2]):
+#             for i in range(data.shape[-1]):
+#                 inp.append((zcoord[:, j, i], data[:, j, i], levels,
+#                             fill_value))
+#         _init_pool()
+#         out = POOL.map(_interp1d, inp, chunksize=1000)
+#         out = np.asarray(out).T
+#         out = out.reshape((len(levels), data.shape[-2], data.shape[-1]))
+#     else:
+#         # TODO: there got to be a faster way to do this
+#         # same problem: http://stackoverflow.com/questions/27622808/
+#         # fast-3d-interpolation-of-atmospheric-data-in-numpy-scipy
+#         out = np.zeros((len(levels), data.shape[-2], data.shape[-1]))
+#         for i in range(data.shape[-1]):
+#             for j in range(data.shape[-2]):
+#                 f = interp1d(zcoord[:, j, i], data[:, j, i],
+#                              fill_value=fill_value, bounds_error=False)
+#                 out[:, j, i] = f(levels)
+#     return out
 
 
 def _ncl_slp(z, t, p, q):

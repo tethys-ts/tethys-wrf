@@ -59,7 +59,9 @@ wrf_variables = {'temp': {'main': 'tk', 'surface': 'T2', 'surface_height': 1.999
                  'recharge': {'main': 'UDROFF'},
                  'shortwave': {'main': 'SWDOWN'},
                  'longwave': {'main': 'GLW'},
-                 'ground_heat_flux': {'main': 'GRDFLX'}}
+                 'ground_heat_flux': {'main': 'GRDFLX'},
+                 'soil_temp': {'main': 'TSLB'},
+                 'soil_water': {'main': 'SMOIS'}}
 
 
 def get_wrf_var(ncfile, varname, times):

@@ -168,6 +168,28 @@ def calc_wind_speed(wrf_xr):
 
 #     return t2
 
+def calc_soil_temp(data, units='degC'):
+    """
+
+    """
+    t2 = data['soil_temp']
+
+    if units == 'degC':
+        t2 = t2 - 273.15
+    elif units != 'K':
+        raise ValueError('units must be either degC or K.')
+
+    return t2
+
+
+def calc_soil_water(data):
+    """
+
+    """
+    t2 = data['soil_water']
+
+    return t2
+
 
 def calc_temp(wrf_xr, units='degC'):
     """
@@ -380,7 +402,13 @@ func_dict = {
                         },
     'calc_ground_heat_flux_0': {'variables': ['ground_heat_flux'],
                         'function': calc_ground_heat_flux_0
-                        }
+                        },
+    'calc_soil_temp': {'variables': ['soil_temp'],
+                  'function': calc_soil_temp
+                  },
+    'calc_soil_water': {'variables': ['soil_water'],
+                  'function': calc_soil_water
+                  },
     }
 
 
