@@ -168,6 +168,21 @@ def calc_wind_speed(wrf_xr):
 
 #     return t2
 
+def calc_avi(data):
+    """
+
+    """
+    u20 = data['u'].sel(height=20)
+    v20 = data['v'].sel(height=20)
+
+    ws = np.sqrt(u20**2 + v20**2)
+
+    avi = (ws * data['pblh'])
+    avi = xr.where(avi > 32000, 32000, avi)
+
+    return avi.expand_dims('height', axis=3)
+
+
 def calc_soil_temp(data, units='degC'):
     """
 
@@ -408,6 +423,9 @@ func_dict = {
                   },
     'calc_soil_water': {'variables': ['soil_water'],
                   'function': calc_soil_water
+                  },
+    'calc_avi': {'variables': ['u', 'v', 'pblh'],
+                  'function': calc_avi
                   },
     }
 
