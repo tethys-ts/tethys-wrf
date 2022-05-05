@@ -19,7 +19,7 @@ import numpy as np
 # import copy
 # import orjson
 # import tethys_utils as tu
-from tethys_wrf import sio, utils
+from tethys_wrf import sio, utils, virtual_parameters
 # from hydrointerp import Interp
 # from .utils import param_func_mappings
 # from glob import glob
@@ -28,6 +28,7 @@ import multiprocessing as mp
 from netCDF4 import Dataset
 from wrf import getvar, interplevel
 import pathlib
+import tethys_utils as tu
 
 ##############################################
 ### Parameters
@@ -69,20 +70,6 @@ def open_wrf_mfdataset(file, **kwargs):
     return xr1
 
 
-def parse_proj(file, **kwargs):
-    """
-
-    """
-    xr1 = sio.open_wrf_dataset(file, **kwargs)
-
-    proj = xr1.attrs['pyproj_srs']
-
-    xr1.close()
-    del xr1
-
-    return proj
-
-
 def determine_heights(file):
     """
 
@@ -94,34 +81,6 @@ def determine_heights(file):
     del ncfile
 
     return heights
-
-
-def wrf_determine_duplicate_times(nc_paths):
-    """
-
-    """
-    if isinstance(nc_paths, str):
-        nc_paths1 = glob.glob(nc_paths)
-    elif isinstance(nc_paths, list):
-        nc_paths1 = nc_paths
-
-    nc_paths1.sort()
-
-    ## Determine duplicate times
-    if len(nc_paths1) > 1:
-        xr1 = open_wrf_mfdataset(nc_paths1[:2])
-
-        time_bool = xr1.get_index('time').duplicated(keep='first')
-
-        xr1.close()
-        del xr1
-
-        time_len = int(len(time_bool)/2)
-        time_index_bool = ~time_bool[time_len:]
-    else:
-        raise ValueError('nc_paths must have > 1 files.')
-
-    return time_index_bool
 
 
 def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None):
@@ -233,48 +192,113 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
     return new_paths
 
 
-
-def wrf_variable_processing(nc_paths, variables, heights, max_workers=4, **kwargs):
-    """
-
-    """
-    if isinstance(nc_paths, str):
-        nc_paths1 = glob.glob(nc_paths)
-    elif isinstance(nc_paths, list):
-        nc_paths1 = nc_paths
-
-    nc_paths1.sort()
-
-    ## Determine duplicate times
-    if len(nc_paths1) > 1:
-        time_index_bool = wrf_determine_duplicate_times(nc_paths1)
-    else:
-        time_index_bool = None
-
-    ## Iterate through files
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers, mp_context=mp.get_context("spawn")) as executor:
-        futures = []
-        for nc_path in nc_paths1:
-            f = executor.submit(preprocess_data_structure, nc_path, variables, heights, time_index_bool)
-            futures.append(f)
-        runs = concurrent.futures.wait(futures)
-
-    ## process output
-    new_paths = [r.result() for r in runs[0]]
-    new_paths1 = []
-    for new_path in new_paths:
-        new_paths1.extend(new_path)
-
-    new_paths1.sort()
-
-    return new_paths1
-
-
-
-
-
 ########################################
 ### wrf class
+
+func_dict = virtual_parameters.func_dict
+
+variables = []
+for k, v in func_dict.items():
+    vars1 = v['variables']
+    variables.extend(vars1)
+
+variables = list(set(variables))
+variables.sort()
+
+
+class WRF(tu.Grid):
+    """
+
+    """
+    _func_dict = func_dict
+
+    available_wrf_variables = variables
+
+    @staticmethod
+    def parse_proj(file, **kwargs):
+        """
+
+        """
+        xr1 = sio.open_wrf_dataset(file, **kwargs)
+
+        proj = xr1.attrs['pyproj_srs']
+
+        xr1.close()
+        del xr1
+
+        return proj
+
+
+    def determine_duplicate_times(self, nc_paths):
+        """
+
+        """
+        if isinstance(nc_paths, str):
+            nc_paths1 = glob.glob(nc_paths)
+        elif isinstance(nc_paths, list):
+            nc_paths1 = nc_paths
+
+        nc_paths1.sort()
+
+        ## Determine duplicate times
+        if len(nc_paths1) > 1:
+            xr1 = open_wrf_mfdataset(nc_paths1[:2])
+
+            time_bool = xr1.get_index('time').duplicated(keep='first')
+
+            xr1.close()
+            del xr1
+
+            time_len = int(len(time_bool)/2)
+            time_index_bool = ~time_bool[time_len:]
+        else:
+            raise ValueError('nc_paths must have > 1 files.')
+
+        return time_index_bool
+
+
+    def variable_processing(self, nc_paths, variables, heights, time_index_bool=None, max_workers=4):
+        """
+
+        """
+        if isinstance(nc_paths, str):
+            nc_paths1 = glob.glob(nc_paths)
+        elif isinstance(nc_paths, list):
+            nc_paths1 = nc_paths
+
+        nc_paths1.sort()
+
+        ## Determine duplicate times
+        if (len(nc_paths1) > 1) and (time_index_bool is None):
+            time_index_bool = self.determine_duplicate_times(nc_paths1)
+
+        ## Iterate through files
+        with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers, mp_context=mp.get_context("spawn")) as executor:
+            futures = []
+            for nc_path in nc_paths1:
+                f = executor.submit(preprocess_data_structure, nc_path, variables, heights, time_index_bool)
+                futures.append(f)
+            runs = concurrent.futures.wait(futures)
+
+        ## process output
+        new_paths = [r.result() for r in runs[0]]
+        new_paths1 = []
+        for new_path in new_paths:
+            new_paths1.extend(new_path)
+
+        new_paths1.sort()
+
+        return new_paths1
+
+
+    def calc_new_variables(self, source_paths):
+        """
+
+        """
+        new_paths2 = tu.grid.multi_calc_new_variables(source_paths, self.dataset_list, self.max_version_date, self._func_dict)
+
+        return new_paths2
+
 
 
 # class WRF(object):
