@@ -10,7 +10,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 name = 'tethys-wrf'
 main_package = 'tethys_wrf'
 # datasets = 'datasets/time_series'
-version = '0.4.8'
+version = '0.4.9'
 descrip = 'tethys wrf utilities'
 
 # The below code is for readthedocs. To have sphinx/readthedocs interact with
@@ -19,7 +19,7 @@ descrip = 'tethys wrf utilities'
 if os.environ.get('READTHEDOCS', False) == 'True':
     INSTALL_REQUIRES = []
 else:
-    INSTALL_REQUIRES = ['dask', 'pyproj', 'netcdf4', 'toolz', 'wrf-python', 'tethys-utils==0.7.5']
+    INSTALL_REQUIRES = ['dask', 'pyproj', 'netcdf4', 'toolz', 'wrf-python', 'tethys-utils==0.7.7']
 
 # Get the long description from the README file
 with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
