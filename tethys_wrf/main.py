@@ -10,13 +10,14 @@ import glob
 import xarray as xr
 import pandas as pd
 import numpy as np
+import tethys_data_models as tdm
 # from netCDF4 import Dataset
 # from wrf import getvar, interpline, CoordPair, xy_to_ll, ll_to_xy
 # import wrf
 # from tethys_wrf import virtual_parameters as vp
 # from tethys_utils.misc import parse_data_paths
 # from . import virtual_parameters as vp
-# import copy
+import copy
 # import orjson
 # import tethys_utils as tu
 from tethys_wrf import sio, utils, virtual_parameters
@@ -29,6 +30,7 @@ from netCDF4 import Dataset
 from wrf import getvar, interplevel
 import pathlib
 import tethys_utils as tu
+from typing import List, Optional, Dict, Union
 
 ##############################################
 ### Parameters
@@ -107,7 +109,7 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
 
     ## Iterate through variables
     for v in variables:
-        var_dict = utils.wrf_variables[v]
+        var_dict = virtual_parameters.wrf_variables_dict[v]
 
         if 'soil' in v:
             xr2 = xr1[var_dict['main']].rename({'soil_layers': 'height'}).copy().load()
@@ -197,13 +199,16 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
 
 func_dict = virtual_parameters.func_dict
 
-variables = []
-for k, v in func_dict.items():
-    vars1 = v['variables']
-    variables.extend(vars1)
+# variables = []
+# for k, v in func_dict.items():
+#     vars1 = v['variables']
+#     variables.extend(vars1)
 
-variables = list(set(variables))
-variables.sort()
+# variables = list(set(variables))
+# variables.sort()
+
+avail_datasets = list(func_dict.keys())
+avail_datasets.sort()
 
 
 class WRF(tu.Grid):
@@ -212,7 +217,7 @@ class WRF(tu.Grid):
     """
     _func_dict = func_dict
 
-    available_wrf_variables = variables
+    available_dataset_codes = avail_datasets
 
     @staticmethod
     def parse_proj(file, **kwargs):
@@ -257,7 +262,7 @@ class WRF(tu.Grid):
         return time_index_bool
 
 
-    def variable_processing(self, nc_paths, variables, heights, time_index_bool=None, max_workers=4):
+    def variable_processing(self, nc_paths, heights, time_index_bool=None, max_workers=4):
         """
 
         """
@@ -267,6 +272,17 @@ class WRF(tu.Grid):
             nc_paths1 = nc_paths
 
         nc_paths1.sort()
+
+        ## Determine the variables needed to be extracted
+        dataset_codes = list(self.dataset_codes_dict.keys())
+
+        variables_set = set()
+        for d in dataset_codes:
+            v1 = self._func_dict[d]['variables']
+            variables_set.update(v1)
+
+        variables = list(variables_set)
+        variables.sort()
 
         ## Determine duplicate times
         if (len(nc_paths1) > 1) and (time_index_bool is None):
@@ -291,13 +307,13 @@ class WRF(tu.Grid):
         return new_paths1
 
 
-    def calc_new_variables(self, source_paths):
-        """
+    # def calc_new_variables(self, source_paths):
+    #     """
 
-        """
-        new_paths2 = tu.grid.multi_calc_new_variables(source_paths, self.dataset_list, self.max_version_date, self._func_dict)
+    #     """
+    #     new_paths2 = tu.grid.multi_calc_new_variables(source_paths, self.dataset_list, self.max_version_date, self._func_dict)
 
-        return new_paths2
+    #     return new_paths2
 
 
 

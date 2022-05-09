@@ -44,27 +44,6 @@ valid_names['lon_var'] = ['lon', 'longitude', 'longitudes', 'lons', 'long']
 valid_names['lat_var'] = ['lat', 'latitude', 'latitudes', 'lats']
 valid_names['time_var'] = ['time', 'times']
 
-ds_cols = ['feature', 'parameter', 'frequency_interval', 'aggregation_statistic', 'units', 'wrf_standard_name', 'cf_standard_name', 'scale_factor']
-
-
-wrf_variables = {'temp': {'main': 'tk', 'surface': 'T2', 'surface_height': 1.999},
-                 'u': {'main': 'ua', 'surface': 'U10', 'surface_height': 9.999},
-                 'v': {'main': 'va', 'surface': 'V10', 'surface_height': 9.999},
-                 'rh': {'main': 'rh', 'surface': 'rh2', 'surface_height': 1.999},
-                 'dew_temp': {'main': 'td', 'surface': 'td2', 'surface_height': 1.999},
-                 'psfc': {'main': 'PSFC'},
-                 'precip': {'main': 'RAINNC'},
-                 'snowfall': {'main': 'SNOWNC'},
-                 'runoff': {'main': 'SFROFF'},
-                 'recharge': {'main': 'UDROFF'},
-                 'shortwave': {'main': 'SWDOWN'},
-                 'longwave': {'main': 'GLW'},
-                 'ground_heat_flux': {'main': 'GRDFLX'},
-                 'soil_temp': {'main': 'TSLB'},
-                 'soil_water': {'main': 'SMOIS'},
-                 'pblh': {'main': 'PBLH'},
-                 }
-
 
 def get_wrf_var(ncfile, varname, times):
     """
@@ -78,56 +57,6 @@ def get_wrf_var(ncfile, varname, times):
 
     return t
 
-
-
-
-# param_func_mappings = {'temp_at_2': ['T2'],
-#                        'precip_at_0': ['RAINNC'],
-#                        'snow_at_0': ['SNOWNC'],
-#                        'runoff_at_0': ['SFROFF'],
-#                        'recharge_at_0': ['UDROFF'],
-#                        'pressure_at_0': ['PSFC'],
-#                        'shortwave_rad_at_0': ['SWDOWN'],
-#                        'longwave_rad_at_0': ['GLW'],
-#                        'heat_flux_at_0': ['GRDFLX'],
-#                        'relative_humidity_at_2': ['T2', 'Q2', 'PSFC'],
-#                        'wind_speed_at_2': ['U10', 'V10'],
-#                        'wind_speed_at_10': ['U10', 'V10'],
-#                         'reference_et_at_0': ['T2', 'Q2', 'U10', 'V10', 'SWDOWN', 'GLW', 'GRDFLX', 'PSFC', 'ALBEDO']
-#                        }
-
-# param_file_mappings = {'temp_at_2': ['2m_temperature_*.nc'],
-#                        'precip_at_0': ['total_precipitation_*.nc'],
-#                        'snow_at_0': ['snowfall_*.nc'],
-#                        'runoff_at_0': ['surface_runoff_*.nc'],
-#                        'recharge_at_0': ['sub_surface_runoff_*.nc'],
-#                        'pressure_at_0': ['surface_pressure_*.nc'],
-#                        'shortwave_rad_at_0': ['surface_net_solar_radiation_*.nc'],
-#                        'longwave_rad_at_0': ['surface_net_thermal_radiation_*.nc'],
-#                        'heat_flux_at_0': ['surface_latent_heat_flux_*.nc'],
-#                        'relative_humidity_at_2': ['2m_temperature_*.nc', '2m_dewpoint_temperature_*.nc'],
-#                        'wind_speed_at_2': ['10m_u_component_of_wind_*.nc', '10m_v_component_of_wind_*.nc'],
-#                        'wind_speed_at_10': ['10m_u_component_of_wind_*.nc', '10m_v_component_of_wind_*.nc'],
-#                        'reference_et_at_0': ['2m_temperature_*.nc', '2m_dewpoint_temperature_*.nc', '10m_u_component_of_wind_*.nc', '10m_v_component_of_wind_*.nc', 'surface_net_solar_radiation_*.nc', 'surface_net_thermal_radiation_*.nc', 'surface_latent_heat_flux_*.nc', 'surface_pressure_*.nc'],
-#                        'pet_at_0': ['potential_evaporation_*.nc'],
-#                        'evaporation_at_0': ['total_evaporation_*.nc']
-#                        }
-
-# param_height_mappings = {'t2m': 2,
-#                          'd2m': 2,
-#                          'tp': 0,
-#                          'sf': 0,
-#                          'sro': 0,
-#                          'ssro': 0,
-#                          'sp': 0,
-#                          'ssr': 0,
-#                          'str': 0,
-#                          'slhf': 0,
-#                          'u10': 10,
-#                          'v10': 10,
-#                          'pev': 0,
-#                          'e': 0
-#                          }
 
 # raw_param_encodings = {'T2': {'scale_factor': 0.01, 'dtype': 'int16', '_FillValue': -9999},
 #                     'RAINNC': {'scale_factor': 0.1, 'dtype': 'int16', '_FillValue': -9999},

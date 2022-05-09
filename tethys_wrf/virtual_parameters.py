@@ -29,7 +29,7 @@ def fix_accum(ds):
     return ds2
 
 
-# def calc_rh_2(wrf_xr, method=1):
+# def rh_2(wrf_xr, method=1):
 #     """
 #     Two methods to calc relative humidity at 2 meters. Copied from https://github.com/keenmisty/WRF/blob/master/matlab_scripts/functions/CalRH.m.
 #     I do not know where the first method comes from, but the second method is the algorithm used in ncl (wrf_rh).
@@ -66,16 +66,16 @@ def fix_accum(ds):
 #     return rh
 
 
-def calc_rh(wrf_xr):
+def relative_humidity(wrf_xr):
     """
 
     """
-    rh = wrf_xr['rh']
+    rh = wrf_xr['relative_humidity']
 
     return rh
 
 
-# def calc_wind_speed(wrf_xr, height=10):
+# def wind_speed(wrf_xr, height=10):
 #     """
 #     Estimate the mean wind speed at 10 or 2 m from the V and U WRF vectors of wind speed. The 2 m method is according to the FAO 56 paper.
 
@@ -103,19 +103,30 @@ def calc_rh(wrf_xr):
 #     return ws
 
 
-def calc_wind_speed(wrf_xr):
+def wind_speed(wrf_xr):
     """
 
     """
-    u10 = wrf_xr['u']
-    v10 = wrf_xr['v']
+    u10 = wrf_xr['u_wind']
+    v10 = wrf_xr['v_wind']
 
     ws = np.sqrt(u10**2 + v10**2)
 
     return ws
 
 
-# def calc_wind_speed_2(wrf_xr):
+def wind_direction(wrf_xr):
+    """
+
+    """
+    u = wrf_xr['u_wind']
+    v = wrf_xr['v_wind']
+
+    wd = np.mod(180 + (180/np.pi)*np.arctan2(v, u), 360)
+
+    return wd
+
+# def wind_speed_2(wrf_xr):
 #     """
 #     Estimate the mean wind speed at 10 or 2 m from the V and U WRF vectors of wind speed. The 2 m method is according to the FAO 56 paper.
 
@@ -130,12 +141,12 @@ def calc_wind_speed(wrf_xr):
 #     -------
 #     xr.DataArray
 #     """
-#     ws = calc_wind_speed(wrf_xr, height=2)
+#     ws = wind_speed(wrf_xr, height=2)
 
 #     return ws
 
 
-# def calc_wind_speed_10(wrf_xr):
+# def wind_speed_10(wrf_xr):
 #     """
 #     Estimate the mean wind speed at 10 or 2 m from the V and U WRF vectors of wind speed. The 2 m method is according to the FAO 56 paper.
 
@@ -150,12 +161,12 @@ def calc_wind_speed(wrf_xr):
 #     -------
 #     xr.DataArray
 #     """
-#     ws = calc_wind_speed(wrf_xr, height=10)
+#     ws = wind_speed(wrf_xr, height=10)
 
 #     return ws
 
 
-# def calc_temp_2(wrf_xr, units='degC'):
+# def temp_2(wrf_xr, units='degC'):
 #     """
 
 #     """
@@ -168,12 +179,12 @@ def calc_wind_speed(wrf_xr):
 
 #     return t2
 
-def calc_avi(data):
+def avi(data):
     """
 
     """
-    u20 = data['u'].sel(height=20)
-    v20 = data['v'].sel(height=20)
+    u20 = data['u_wind'].sel(height=20)
+    v20 = data['v_wind'].sel(height=20)
 
     ws = np.sqrt(u20**2 + v20**2)
 
@@ -183,11 +194,11 @@ def calc_avi(data):
     return avi.expand_dims('height', axis=3)
 
 
-def calc_soil_temp(data, units='degC'):
+def soil_temperature(data, units='degC'):
     """
 
     """
-    t2 = data['soil_temp']
+    t2 = data['soil_temperature']
 
     if units == 'degC':
         t2 = t2 - 273.15
@@ -197,7 +208,7 @@ def calc_soil_temp(data, units='degC'):
     return t2
 
 
-def calc_soil_water(data):
+def soil_water(data):
     """
 
     """
@@ -206,11 +217,11 @@ def calc_soil_water(data):
     return t2
 
 
-def calc_temp(wrf_xr, units='degC'):
+def air_temperature(wrf_xr, units='degC'):
     """
 
     """
-    t2 = wrf_xr['temp']
+    t2 = wrf_xr['air_temperature']
 
     if units == 'degC':
         t2 = t2 - 273.15
@@ -220,11 +231,11 @@ def calc_temp(wrf_xr, units='degC'):
     return t2
 
 
-def calc_dew_temp(wrf_xr, units='degC'):
+def dew_temperature(wrf_xr, units='degC'):
     """
 
     """
-    t2 = wrf_xr['dew_temp']
+    t2 = wrf_xr['dew_temperature']
 
     # if units == 'degC':
     #     t2 = t2 - 273.15
@@ -234,11 +245,11 @@ def calc_dew_temp(wrf_xr, units='degC'):
     return t2
 
 
-def calc_surface_pressure(wrf_xr, units='hPa'):
+def barometric_pressure(wrf_xr, units='hPa'):
     """
 
     """
-    pres = wrf_xr['psfc'].assign_coords(height=0).expand_dims('height', axis=3)
+    pres = wrf_xr['air_pressure']
 
     if units == 'hPa':
         pres = pres * 0.01
@@ -250,7 +261,7 @@ def calc_surface_pressure(wrf_xr, units='hPa'):
     return pres
 
 
-# def calc_eto_0(wrf_xr):
+# def eto_0(wrf_xr):
 #     """
 
 #     """
@@ -284,12 +295,12 @@ def calc_surface_pressure(wrf_xr, units='hPa'):
 #     return ETo
 
 
-def calc_precip_0(wrf_xr):
+def precipitation(wrf_xr):
     """
 
     """
     ## Assign variables
-    precip = wrf_xr['precip']
+    precip = wrf_xr['precipitation']
 
     ## Convert from accumultion to cumultive
     precip2 = fix_accum(precip).assign_coords(height=0).expand_dims('height', axis=3)
@@ -297,7 +308,7 @@ def calc_precip_0(wrf_xr):
     return precip2
 
 
-def calc_snow_0(wrf_xr):
+def snowfall(wrf_xr):
     """
 
     """
@@ -310,12 +321,12 @@ def calc_snow_0(wrf_xr):
     return precip2
 
 
-def calc_runoff_0(wrf_xr):
+def surface_runoff(wrf_xr):
     """
 
     """
     ## Assign variables
-    precip = wrf_xr['runoff']
+    precip = wrf_xr['surface_runoff']
 
     ## Convert from accumultion to cumultive
     precip2 = fix_accum(precip).assign_coords(height=0).expand_dims('height', axis=3)
@@ -323,12 +334,12 @@ def calc_runoff_0(wrf_xr):
     return precip2
 
 
-def calc_recharge_0(wrf_xr):
+def gw_recharge(wrf_xr):
     """
 
     """
     ## Assign variables
-    precip = wrf_xr['recharge']
+    precip = wrf_xr['gw_recharge']
 
     ## Convert from accumultion to cumultive
     precip2 = fix_accum(precip).assign_coords(height=0).expand_dims('height', axis=3)
@@ -336,12 +347,12 @@ def calc_recharge_0(wrf_xr):
     return precip2
 
 
-def calc_shortwave_0(wrf_xr):
+def downward_shortwave(wrf_xr):
     """
 
     """
     ## Assign variables
-    precip = wrf_xr['shortwave']
+    precip = wrf_xr['downward_shortwave']
 
     ## Convert from accumultion to cumultive
     precip2 = fix_accum(precip).assign_coords(height=0).expand_dims('height', axis=3)
@@ -349,12 +360,12 @@ def calc_shortwave_0(wrf_xr):
     return precip2
 
 
-def calc_longwave_0(wrf_xr):
+def downward_longwave(wrf_xr):
     """
 
     """
     ## Assign variables
-    precip = wrf_xr['longwave']
+    precip = wrf_xr['downward_longwave']
 
     ## Convert from accumultion to cumultive
     precip2 = fix_accum(precip).assign_coords(height=0).expand_dims('height', axis=3)
@@ -362,7 +373,7 @@ def calc_longwave_0(wrf_xr):
     return precip2
 
 
-def calc_ground_heat_flux_0(wrf_xr):
+def ground_heat_flux(wrf_xr):
     """
 
     """
@@ -375,58 +386,546 @@ def calc_ground_heat_flux_0(wrf_xr):
     return precip2
 
 
+# def latent_heat_flux(wrf_xr):
+#     """
+
+#     """
+#     ## Assign variables
+#     precip = wrf_xr['latent_heat_flux']
+
+#     ## Convert from accumultion to cumultive
+#     precip2 = fix_accum(precip).assign_coords(height=0).expand_dims('height', axis=3)
+
+#     return precip2
+
+
+# def upward_heat_flux(wrf_xr):
+#     """
+
+#     """
+#     ## Assign variables
+#     precip = wrf_xr['upward_heat_flux']
+
+#     ## Convert from accumultion to cumultive
+#     precip2 = fix_accum(precip).assign_coords(height=0).expand_dims('height', axis=3)
+
+#     return precip2
+
+
+def upward_moisture_flux(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    precip = wrf_xr['upward_moisture_flux']
+
+    ## Convert from accumultion to cumultive
+    precip2 = fix_accum(precip).assign_coords(height=0).expand_dims('height', axis=3)
+
+    return precip2
+
+
+def albedo(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    a = wrf_xr['albedo'].assign_coords(height=0).expand_dims('height', axis=3)
+
+    return a
+
+
+def specific_humidity(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    a = wrf_xr['water_vapor_mixing_ratio']
+    q = (a/(1 + a)) * 1000
+
+    return q
+
+
+def surface_emissivity(wrf_xr):
+    """
+
+    """
+    ## Assign variables
+    a = wrf_xr['surface_emissivity'].assign_coords(height=0).expand_dims('height', axis=3)
+
+    return a
+
+
+
 ########################################
-### func dict
+### dicts
+
+wrf_variables_dict = {'air_temperature': {'main': 'tk', 'surface': 'T2', 'surface_height': 1.999},
+                 'u_wind': {'main': 'ua', 'surface': 'U10', 'surface_height': 9.999},
+                 'v_wind': {'main': 'va', 'surface': 'V10', 'surface_height': 9.999},
+                 'relative_humidity': {'main': 'rh', 'surface': 'rh2', 'surface_height': 1.999},
+                 'dew_temperature': {'main': 'td', 'surface': 'td2', 'surface_height': 1.999},
+                 'air_pressure': {'main': 'p', 'surface': 'PSFC', 'surface_height': 0},
+                 'precipitation': {'main': 'RAINNC'},
+                 'snowfall': {'main': 'SNOWNC'},
+                 'surface_runoff': {'main': 'SFROFF'},
+                 'gw_recharge': {'main': 'UDROFF'},
+                 'downward_shortwave': {'main': 'SWDOWN'},
+                 'downward_longwave': {'main': 'GLW'},
+                 'ground_heat_flux': {'main': 'GRDFLX'},
+                 'soil_temperature': {'main': 'TSLB'},
+                 'soil_water': {'main': 'SMOIS'},
+                 'pblh': {'main': 'PBLH'},
+                 'albedo': {'main': 'ALBEDO'},
+                 'surface_emissivity': {'main': 'EMISS'},
+                 # 'terrain_height': {'main': 'HGT'},
+                 # 'upward_heat_flux': {'main': 'HFX'},
+                 # 'upward_moisture_flux': {'main': 'QFX'},
+                 # 'latent_heat_flux': {'main': 'LH'},
+                 'water_vapor_mixing_ratio': {'main': 'QVAPOR', 'surface': 'Q2', 'surface_height': 1.999},
+                 }
 
 func_dict = {
-    'calc_temp': {'variables': ['temp'],
-                  'function': calc_temp
+    'air_temperature': {'variables': ['air_temperature'],
+             'function': air_temperature,
+             'metadata':
+                 {'feature': 'atmosphere',
+                  'parameter': 'temperature',
+                  'aggregation_statistic': 'instantaneous',
+                  'units': 'degC',
+                  'cf_standard_name': 'air_temperature',
+                  'wrf_standard_name': 'T',
+                  'precision': 0.01,
+                  'properties':
+                    {'encoding':
+                      {'temperature':
+                        {'scale_factor': 0.01,
+                        'dtype': 'int16',
+                        '_FillValue': -9999}
+                        }
+                          }
+                        }
                   },
-    'calc_rh': {'variables': ['rh'],
-                'function': calc_rh
+    'relative_humidity': {'variables': ['relative_humidity'],
+                          'function': relative_humidity,
+                          'metadata':
+                              {'feature': 'atmosphere',
+                               'parameter': 'relative_humidity',
+                               'aggregation_statistic': 'instantaneous',
+                               'units': '%',
+                               'cf_standard_name': 'relative_humidity',
+                               'wrf_standard_name': 'RH',
+                               'precision': 0.01,
+                               'properties':
+                                 {'encoding':
+                                   {'relative_humidity':
+                                     {'scale_factor': 0.01,
+                                     'dtype': 'int16',
+                                     '_FillValue': -9999}
+                                     }
+                                       }
+                                     }
                 },
-    'calc_wind_speed': {'variables': ['u', 'v'],
-                        'function': calc_wind_speed
+    'wind_speed': {'variables': ['u_wind', 'v_wind'],
+                   'function': wind_speed,
+                   'metadata':
+                       {'feature': 'atmosphere',
+                        'parameter': 'wind_speed',
+                        'aggregation_statistic': 'instantaneous',
+                        'units': 'm/s',
+                        'cf_standard_name': 'wind_speed',
+                        'wrf_standard_name': 'UV',
+                        'precision': 0.01,
+                        'properties':
+                          {'encoding':
+                            {'wind_speed':
+                              {'scale_factor': 0.01,
+                              'dtype': 'int16',
+                              '_FillValue': -9999}
+                              }
+                                }
+                              }
                         },
-    'calc_dew_temp': {'variables': ['dew_temp'],
-                      'function': calc_dew_temp
+    'wind_direction': {'variables': ['u_wind', 'v_wind'],
+                       'function': wind_direction,
+                       'metadata':
+                           {'feature': 'atmosphere',
+                            'parameter': 'wind_direction',
+                            'aggregation_statistic': 'instantaneous',
+                            'units': 'deg',
+                            'cf_standard_name': 'wind_from_direction',
+                            'wrf_standard_name': 'UV',
+                            'precision': 0.1,
+                            'properties':
+                              {'encoding':
+                                {'wind_direction':
+                                  {'scale_factor': 0.1,
+                                  'dtype': 'int16',
+                                  '_FillValue': -999}
+                                  }
+                                    }
+                                  }
+                        },
+    'dew_temperature': {'variables': ['dew_temperature'],
+                 'function': dew_temperature,
+                 'metadata':
+                     {'feature': 'atmosphere',
+                      'parameter': 'temperature_dew_point',
+                      'aggregation_statistic': 'instantaneous',
+                      'units': 'degC',
+                      'cf_standard_name': 'dew_point_temperature',
+                      'wrf_standard_name': 'TD',
+                      'precision': 0.01,
+                      'properties':
+                        {'encoding':
+                          {'temperature_dew_point':
+                            {'scale_factor': 0.01,
+                            'dtype': 'int16',
+                            '_FillValue': -9999}
+                            }
+                              }
+                            }
                       },
-    'calc_surface_pressure': {'variables': ['psfc'],
-                      'function': calc_surface_pressure
+    'barometric_pressure': {'variables': ['air_pressure'],
+                         'function': barometric_pressure,
+                         'metadata':
+                             {'feature': 'atmosphere',
+                              'parameter': 'barometric_pressure',
+                              'aggregation_statistic': 'instantaneous',
+                              'units': 'hPa',
+                              'cf_standard_name': 'air_pressure',
+                              'wrf_standard_name': 'P',
+                              'precision': 0.1,
+                              'properties':
+                                {'encoding':
+                                  {'barometric_pressure':
+                                    {'scale_factor': 0.1,
+                                    'dtype': 'int16',
+                                    '_FillValue': -9999}
+                                    }
+                                      }
+                                    }
                       },
-    'calc_precip_0': {'variables': ['precip'],
-                     'function': calc_precip_0
+    'precipitation': {'variables': ['precipitation'],
+               'function': precipitation,
+               'metadata':
+                   {'feature': 'atmosphere',
+                    'parameter': 'precipitation',
+                    'aggregation_statistic': 'cumulative',
+                    'units': 'mm',
+                    'cf_standard_name': 'precipitation_amount',
+                    'wrf_standard_name': 'RAINNC',
+                    'precision': 0.1,
+                    'properties':
+                      {'encoding':
+                        {'precipitation':
+                          {'scale_factor': 0.1,
+                          'dtype': 'int16',
+                          '_FillValue': -9999}
+                          }
+                            }
+                          }
                      },
-    'calc_snow_0': {'variables': ['snowfall'],
-                   'function': calc_snow_0
+    'snowfall': {'variables': ['snowfall'],
+                 'function': snowfall,
+                 'metadata':
+                     {'feature': 'atmosphere',
+                      'parameter': 'snow_depth',
+                      'aggregation_statistic': 'cumulative',
+                      'units': 'mm',
+                      'cf_standard_name': 'thickness_of_snowfall_amount',
+                      'wrf_standard_name': 'SNOWNC',
+                      'precision': 0.1,
+                      'properties':
+                        {'encoding':
+                          {'snow_depth':
+                            {'scale_factor': 0.1,
+                            'dtype': 'int16',
+                            '_FillValue': -9999}
+                            }
+                              }
+                            }
                    },
-    # 'calc_rain_0': {'variables': ['var61', 'var65'],
-    #                'function': calc_rain_0
-    #                },
-    'calc_longwave_0': {'variables': ['longwave'],
-                       'function': calc_longwave_0
+    'downward_longwave': {'variables': ['downward_longwave'],
+                          'function': downward_longwave,
+                          'metadata':
+                              {'feature': 'atmosphere',
+                               'parameter': 'radiation_incoming_longwave',
+                               'aggregation_statistic': 'cumulative',
+                               'units': 'W/m^2',
+                               'cf_standard_name': 'surface_downwelling_longwave_flux_in_air',
+                               'wrf_standard_name': 'GLW',
+                               'precision': 0.1,
+                               'properties':
+                                 {'encoding':
+                                   {'radiation_incoming_longwave':
+                                     {'scale_factor': 0.1,
+                                     'dtype': 'int16',
+                                     '_FillValue': -9999}
+                                     }
+                                       }
+                                     }
                        },
-    'calc_shortwave_0': {'variables': ['shortwave'],
-                        'function': calc_shortwave_0
+    'downward_shortwave': {'variables': ['downward_shortwave'],
+                           'function': downward_shortwave,
+                           'metadata':
+                               {'feature': 'atmosphere',
+                                'parameter': 'radiation_incoming_shortwave',
+                                'aggregation_statistic': 'cumulative',
+                                'units': 'W/m^2',
+                                'cf_standard_name': 'surface_downwelling_shortwave_flux_in_air',
+                                'wrf_standard_name': 'SWDOWN',
+                                'precision': 0.1,
+                                'properties':
+                                  {'encoding':
+                                    {'radiation_incoming_shortwave':
+                                      {'scale_factor': 0.1,
+                                      'dtype': 'int16',
+                                      '_FillValue': -9999}
+                                      }
+                                        }
+                                      }
+
                         },
-    'calc_runoff_0': {'variables': ['runoff'],
-                        'function': calc_runoff_0
+    'surface_runoff': {'variables': ['surface_runoff'],
+                       'function': surface_runoff,
+                       'metadata':
+                           {'feature': 'pedosphere',
+                            'parameter': 'runoff',
+                            'aggregation_statistic': 'cumulative',
+                            'units': 'mm',
+                            'cf_standard_name': 'runoff_amount',
+                            'wrf_standard_name': 'SFROFF',
+                            'precision': 0.1,
+                            'properties':
+                              {'encoding':
+                                {'runoff':
+                                  {'scale_factor': 0.1,
+                                  'dtype': 'int16',
+                                  '_FillValue': -9999}
+                                  }
+                                    }
+                                  }
                         },
-    'calc_recharge_0': {'variables': ['recharge'],
-                        'function': calc_recharge_0
+    'gw_recharge': {'variables': ['gw_recharge'],
+                    'function': gw_recharge,
+                    'metadata':
+                        {'feature': 'pedosphere',
+                         'parameter': 'recharge_groundwater',
+                         'aggregation_statistic': 'cumulative',
+                         'units': 'mm',
+                         'cf_standard_name': 'subsurface_runoff_amount',
+                         'wrf_standard_name': 'UDROFF',
+                         'precision': 0.1,
+                         'properties':
+                           {'encoding':
+                             {'recharge_groundwater':
+                               {'scale_factor': 0.1,
+                               'dtype': 'int16',
+                               '_FillValue': -9999}
+                               }
+                                 }
+                               }
                         },
-    'calc_ground_heat_flux_0': {'variables': ['ground_heat_flux'],
-                        'function': calc_ground_heat_flux_0
+    'ground_heat_flux': {'variables': ['ground_heat_flux'],
+                         'function': ground_heat_flux,
+                         'metadata':
+                             {'feature': 'pedosphere',
+                              'parameter': 'ground_heat_flux',
+                              'aggregation_statistic': 'cumulative',
+                              'units': 'W/m^2',
+                              'cf_standard_name': 'downward_heat_flux_in_soil',
+                              'wrf_standard_name': 'GRDFLX',
+                              'precision': 0.1,
+                              'properties':
+                                {'encoding':
+                                  {'ground_heat_flux':
+                                    {'scale_factor': 0.1,
+                                    'dtype': 'int16',
+                                    '_FillValue': -9999}
+                                    }
+                                      }
+                                    }
                         },
-    'calc_soil_temp': {'variables': ['soil_temp'],
-                  'function': calc_soil_temp
+    # 'latent_heat_flux': {'variables': ['latent_heat_flux'],
+    #                      'function': latent_heat_flux,
+    #                      'metadata':
+    #                          {'feature': 'pedosphere',
+    #                           'parameter': 'latent_heat_flux',
+    #                           'aggregation_statistic': 'cumulative',
+    #                           'units': 'W/m^2',
+    #                           'cf_standard_name': 'downward_heat_flux_in_soil',
+    #                           'wrf_standard_name': 'GRDFLX',
+    #                           'precision': 0.1,
+    #                           'properties':
+    #                             {'encoding':
+    #                               {'ground_heat_flux':
+    #                                 {'scale_factor': 0.1,
+    #                                 'dtype': 'int16',
+    #                                 '_FillValue': -9999}
+    #                                 }
+    #                                   }
+    #                                 }
+    #                     },
+    # 'upward_heat_flux': {'variables': ['ground_heat_flux'],
+    #                      'function': ground_heat_flux,
+    #                      'metadata':
+    #                          {'feature': 'pedosphere',
+    #                           'parameter': 'ground_heat_flux',
+    #                           'aggregation_statistic': 'cumulative',
+    #                           'units': 'W/m^2',
+    #                           'cf_standard_name': 'downward_heat_flux_in_soil',
+    #                           'wrf_standard_name': 'GRDFLX',
+    #                           'precision': 0.1,
+    #                           'properties':
+    #                             {'encoding':
+    #                               {'ground_heat_flux':
+    #                                 {'scale_factor': 0.1,
+    #                                 'dtype': 'int16',
+    #                                 '_FillValue': -9999}
+    #                                 }
+    #                                   }
+    #                                 }
+    #                     },
+    # 'downward_heat_flux': {'variables': ['ground_heat_flux'],
+    #                      'function': ground_heat_flux,
+    #                      'metadata':
+    #                          {'feature': 'pedosphere',
+    #                           'parameter': 'ground_heat_flux',
+    #                           'aggregation_statistic': 'cumulative',
+    #                           'units': 'W/m^2',
+    #                           'cf_standard_name': 'downward_heat_flux_in_soil',
+    #                           'wrf_standard_name': 'GRDFLX',
+    #                           'precision': 0.1,
+    #                           'properties':
+    #                             {'encoding':
+    #                               {'ground_heat_flux':
+    #                                 {'scale_factor': 0.1,
+    #                                 'dtype': 'int16',
+    #                                 '_FillValue': -9999}
+    #                                 }
+    #                                   }
+    #                                 }
+    #                     },
+    'soil_temperature': {'variables': ['soil_temperature'],
+                  'function': soil_temperature,
+                  'metadata':
+                      {'feature': 'pedosphere',
+                       'parameter': 'temperature',
+                       'aggregation_statistic': 'instantaneous',
+                       'units': 'degC',
+                       'cf_standard_name': 'soil_temperature',
+                       'wrf_standard_name': 'TSLB',
+                       'precision': 0.01,
+                       'properties':
+                         {'encoding':
+                           {'temperature':
+                             {'scale_factor': 0.01,
+                             'dtype': 'int16',
+                             '_FillValue': -9999}
+                             }
+                               }
+                             }
                   },
-    'calc_soil_water': {'variables': ['soil_water'],
-                  'function': calc_soil_water
+    'soil_water': {'variables': ['soil_water'],
+                   'function': soil_water,
+                   'metadata':
+                       {'feature': 'pedosphere',
+                        'parameter': 'volumetric_water_content',
+                        'aggregation_statistic': 'instantaneous',
+                        'units': 'm^3/m^3',
+                        'cf_standard_name': 'mass_content_of_water_in_soil',
+                        'wrf_standard_name': 'SMOIS',
+                        'precision': 0.0001,
+                        'properties':
+                          {'encoding':
+                            {'volumetric_water_content':
+                              {'scale_factor': 0.0001,
+                              'dtype': 'int16',
+                              '_FillValue': -9999}
+                              }
+                                }
+                              }
                   },
-    'calc_avi': {'variables': ['u', 'v', 'pblh'],
-                  'function': calc_avi
+    'avi': {'variables': ['u_wind', 'v_wind', 'pblh'],
+            'function': avi,
+            'metadata':
+                {'feature': 'atmosphere',
+                 'parameter': 'air_ventilation_index',
+                 'aggregation_statistic': 'instantaneous',
+                 'units': 'm^2/s',
+                 # 'cf_standard_name': 'air_pressure',
+                 # 'wrf_standard_name': 'PSFC',
+                 'description': 'The air ventilation index is the product of the mixing height (m) and the transport wind speed (m/s) used as a tool for air quality forecasters to determine the potential of the atmosphere to disperse contaminants such as smoke or smog. We have used the product of the PBLH and 20m wind speed. This is comparible to the air ventilation index used by the University of Washington.',
+                 'precision': 1,
+                 'properties':
+                   {'encoding':
+                     {'air_ventilation_index':
+                       {'scale_factor': 1,
+                       'dtype': 'int16',
+                       '_FillValue': -9999}
+                       }
+                         }
+                       }
+                  },
+    'surface_emissivity': {'variables': ['surface_emissivity'],
+                           'function': surface_emissivity,
+                           'metadata':
+                               {'feature': 'pedosphere',
+                                'parameter': 'surface_emissivity',
+                                'aggregation_statistic': 'instantaneous',
+                                'units': '',
+                                'cf_standard_name': 'surface_longwave_emissivity',
+                                'wrf_standard_name': 'EMISS',
+                                'precision': 0.0001,
+                                'properties':
+                                  {'encoding':
+                                    {'surface_emissivity':
+                                      {'scale_factor': 0.0001,
+                                      'dtype': 'int16',
+                                      '_FillValue': -9999}
+                                      }
+                                        }
+                                      }
+                  },
+    'specific_humidity': {'variables': ['water_vapor_mixing_ratio'],
+                           'function': specific_humidity,
+                           'metadata':
+                               {'feature': 'atmosphere',
+                                'parameter': 'specific_humidity',
+                                'aggregation_statistic': 'instantaneous',
+                                'units': 'g/kg',
+                                'cf_standard_name': 'specific_humidity',
+                                # 'wrf_standard_name': 'QVAPOR',
+                                'precision': 0.001,
+                                'properties':
+                                  {'encoding':
+                                    {'specific_humidity':
+                                      {'scale_factor': 0.001,
+                                      'dtype': 'int16',
+                                      '_FillValue': -9999}
+                                      }
+                                        }
+                                      }
+                  },
+    'albedo': {'variables': ['albedo'],
+                           'function': albedo,
+                           'metadata':
+                               {'feature': 'pedosphere',
+                                'parameter': 'albedo',
+                                'aggregation_statistic': 'instantaneous',
+                                'units': '',
+                                'cf_standard_name': 'surface_albedo',
+                                'wrf_standard_name': 'ALBEDO',
+                                'precision': 0.0001,
+                                'properties':
+                                  {'encoding':
+                                    {'albedo':
+                                      {'scale_factor': 0.0001,
+                                      'dtype': 'int16',
+                                      '_FillValue': -9999}
+                                      }
+                                        }
+                                      }
                   },
     }
-
-
