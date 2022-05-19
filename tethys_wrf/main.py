@@ -234,7 +234,8 @@ class WRF(tu.Grid):
         return proj
 
 
-    def determine_duplicate_times(self, nc_paths):
+    @staticmethod
+    def determine_duplicate_times(nc_paths):
         """
 
         """
