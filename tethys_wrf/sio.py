@@ -853,15 +853,15 @@ def open_wrf_dataset(file, **kwargs):
     nc.set_auto_mask(False)
 
     # Change staggered variables to unstaggered ones
-    for vn, v in nc.variables.items():
-        if wrftools.Unstaggerer.can_do(v):
-            nc.variables[vn] = wrftools.Unstaggerer(v)
+    # for vn, v in nc.variables.items():
+    #     if wrftools.Unstaggerer.can_do(v):
+    #         nc.variables[vn] = wrftools.Unstaggerer(v)
 
     # Check if we can add diagnostic variables to the pot
-    for vn in wrftools.var_classes:
-        cl = getattr(wrftools, vn)
-        if vn not in nc.variables and cl.can_do(nc):
-            nc.variables[vn] = cl(nc)
+    # for vn in wrftools.var_classes:
+    #     cl = getattr(wrftools, vn)
+    #     if vn not in nc.variables and cl.can_do(nc):
+    #         nc.variables[vn] = cl(nc)
 
     # trick xarray with our custom netcdf
     ds = xr.open_dataset(NetCDF4DataStore(nc), **kwargs)
@@ -880,17 +880,21 @@ def open_wrf_dataset(file, **kwargs):
         if time is not None:
             ds['Time'] = time
         ds = ds.rename({'Time':'time'})
-    tr = {'Time': 'time', 'XLAT': 'lat', 'XLONG': 'lon', 'XTIME': 'xtime'}
+    # tr = {'Time': 'time', 'XLAT': 'lat', 'XLONG': 'lon', 'XTIME': 'xtime'}
+    tr = {'Time': 'time', 'XLAT': 'lat', 'XLONG': 'lon'}
     tr = {k: tr[k] for k in tr.keys() if k in ds.variables}
     ds = ds.rename(tr)
 
     # drop ugly vars
-    vns = ['Times', 'XLAT_V', 'XLAT_U', 'XLONG_U', 'XLONG_V']
+    vns = ['Times', 'XLAT_V', 'XLAT_U', 'XLONG_U', 'XLONG_V', 'XTIME']
     vns = [vn for vn in vns if vn in ds.variables]
     try:
         ds = ds.drop_vars(vns)
     except AttributeError:
         ds = ds.drop(vns)
+
+    if 'ZS' in ds:
+        ds = ds.assign_coords(soil_layers=-ds['ZS'].isel(time=0).drop('time'))
 
     # add cartesian coords
     ds['west_east'] = ds.salem.grid.x_coord
@@ -898,8 +902,8 @@ def open_wrf_dataset(file, **kwargs):
 
     # add pyproj string everywhere
     ds.attrs['pyproj_srs'] = ds.salem.grid.proj.srs
-    for v in ds.data_vars:
-        ds[v].attrs['pyproj_srs'] = ds.salem.grid.proj.srs
+    # for v in ds.data_vars:
+    #     ds[v].attrs['pyproj_srs'] = ds.salem.grid.proj.srs
 
     return ds
 

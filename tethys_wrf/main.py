@@ -44,34 +44,6 @@ from typing import List, Optional, Dict, Union
 ### Functions
 
 
-def open_wrf_dataset(file, **kwargs):
-    """
-
-    """
-    xr1 = sio.open_wrf_dataset(file, **kwargs)
-    xr1 = xr1.drop('xtime', errors='ignore')
-
-    xr1 = xr1.assign_coords(soil_layers=-xr1['ZS'].isel(time=0).drop('time'))
-
-    # if process_altitude:
-    #     alt = xr1['HGT'].isel(time=0)
-    #     xr1.coords['altitude'] = (('south_north', 'west_east'), alt)
-
-    return xr1
-
-
-def open_wrf_mfdataset(file, **kwargs):
-    """
-
-    """
-    xr1 = sio.open_mf_wrf_dataset(file, **kwargs)
-    xr1 = xr1.drop('xtime', errors='ignore')
-
-    xr1 = xr1.assign_coords(soil_layers=-xr1['ZS'].isel(time=0).drop('time'))
-
-    return xr1
-
-
 def determine_heights(file):
     """
 
@@ -91,7 +63,7 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
     """
     new_paths = []
     # base_dims = ('time', 'south_north', 'west_east')
-    xr1 = open_wrf_dataset(nc_path)
+    xr1 = sio.open_wrf_dataset(nc_path)
 
     ## Get first timestamp for file naming
     times = xr1['time'].copy()
@@ -248,7 +220,7 @@ class WRF(tu.Grid):
 
         ## Determine duplicate times
         if len(nc_paths1) > 1:
-            xr1 = open_wrf_mfdataset(nc_paths1[:2])
+            xr1 = sio.open_wrf_mfdataset(nc_paths1[:2])
 
             time_bool = xr1.get_index('time').duplicated(keep='first')
 

@@ -5,11 +5,13 @@ Created on Tue Jul  2 09:25:41 2019
 @author: michaelek
 """
 # import pytest
+import xarray as xr
 import numpy as np
 import os
 import yaml
 import tethys_utils as tu
 import pandas as pd
+from tethys_wrf import sio, utils, virtual_parameters
 # from tethys_utils.datasets import get_path
 
 pd.options.display.max_columns = 10
@@ -19,9 +21,11 @@ pd.options.display.max_columns = 10
 ### Parameters
 
 base_path = '/media/nvme1/data/UC/wrf'
-# nc1 = 'wrfout_d03_2017-01-07_00_00_00.nc'
+nc1 = 'wrfout_d04_2020-02-01_00_00_00'
 # nc1 = 'wrfout_d04_2014-02-22_00_00_00.nc'
-nc1 = 'wrfout_d04_*'
+# nc1 = 'wrfout_d04_*'
+
+nc2 = '/media/nvme1/data/met-solutions/new_set2/MetSolutionsWRF_2022_07_28_06Z.nc'
 
 # ncs1 = ['wrfout_d04_2014-02-22_00_00_00.nc', 'wrfout_d04_2014-03-01_00_00_00.nc']
 
@@ -141,13 +145,76 @@ def test_df_to_xarray():
 
     assert (len(ds1) == 6) and (len2 < 30000) and (len2 > 20000)
 
+#############################################################
+### Other tests
+
+file = nc2
+
+x0 = sio.open_wrf_dataset(wrf_nc)
+x1a = sio.open_wrf_dataset(nc2)
+x1b = xr.open_dataset(nc2)
 
 
 
-# @pytest.mark.parametrize('input_sites', [input_sites1, input_sites2, input_sites3])
-# def test_nat(input_sites):
-#     f1 = FlowNat(from_date, to_date, input_sites=input_sites)
-#
-#     nat_flow = f1.naturalisation()
-#
-#     assert (len(f1.summ) >= 1) & (len(nat_flow) > 2900)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
