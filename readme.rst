@@ -1,65 +1,84 @@
 tethys-wrf
 ==========
 
-Parameter requirements
+WRF parameter requirements
 ----------------------
 height_agl::
-  
-  "PH", "PHB", "HGT"
+
+  'PH', 'PHB', 'HGT'
 
 air_temperature::
-  "T", "P", "PB", "T2"
+
+  'T', 'P', 'PB', 'T2'
 
 u_wind::
-  "U", "U10"
+
+  'U', 'U10'
 
 v_wind::
-  "V", "V10"
+
+  'V', 'V10'
 
 relative_humidity::
-  "T", "P", "PB", "QVAPOR", "T2", "PSFC", "Q2"
+
+  'T', 'P', 'PB', 'QVAPOR', 'T2', 'PSFC', 'Q2'
 
 dew_temperature::
-  "P", "PB", "QVAPOR", "PSFC", "Q2"
+
+  'P', 'PB', 'QVAPOR', 'PSFC', 'Q2'
 
 air_pressure::
-  "P", "PRES", "PSFC"
+
+  'P', 'PRES', 'PSFC'
 
 precipitation::
+
   'RAINNC'
 
 snowfall::
+
   'SNOWNC'
 
 surface_runoff::
+
   'SFROFF'
 
 gw_recharge::
+
   'UDROFF'
 
 downward_shortwave::
+
   'SWDOWN'
 
 downward_longwave::
+
   'GLW'
 
 ground_heat_flux::
+
   'GRDFLX'
 
 soil_temperature::
+
   'TSLB', 'ZS'
 
 soil_water::
+
   'SMOIS', 'ZS'
 
 pblh::
+
   'PBLH'
 
 albedo::
+
   'ALBEDO'
 
 surface_emissivity::
+
   'EMISS'
 
 water_vapor_mixing_ratio::
+
   QVAPOR', 'Q2'
