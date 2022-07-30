@@ -76,7 +76,6 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
 
     ncfile = Dataset(nc_path)
 
-    # h = getvar(ncfile, "height_agl", timeidx=None)
     h = utils.get_wrf_var(ncfile, "height_agl", times)
 
     ## Iterate through variables

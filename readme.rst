@@ -1,8 +1,10 @@
 tethys-wrf
 ==========
 
-WRF parameter requirements
+WRF variable requirements
 ----------------------
+The base requirements are the XLONG and XLAT dimensions as well as the Times variable. The height_agl listed below is required for any non-surface variables.
+
 height_agl::
 
   'PH', 'PHB', 'HGT'
@@ -11,13 +13,9 @@ air_temperature::
 
   'T', 'P', 'PB', 'T2'
 
-u_wind::
+wind::
 
-  'U', 'U10'
-
-v_wind::
-
-  'V', 'V10'
+  'U', 'V', 'U10', 'V10'
 
 relative_humidity::
 
