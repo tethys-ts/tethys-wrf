@@ -28,7 +28,7 @@ precipitation::
   'RAINNC'
 
 snowfall::
-  'snowfall'
+  'SNOWNC'
 
 surface_runoff::
   'SFROFF'
@@ -46,10 +46,10 @@ ground_heat_flux::
   'GRDFLX'
 
 soil_temperature::
-  'TSLB'
+  'TSLB', 'ZS'
 
 soil_water::
-  'SMOIS'
+  'SMOIS', 'ZS'
 
 pblh::
   'PBLH'

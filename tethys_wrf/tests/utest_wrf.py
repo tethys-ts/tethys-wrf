@@ -149,13 +149,15 @@ def test_df_to_xarray():
 ### Other tests
 
 file = nc2
+nc_paths = [nc2]
+nc_path = nc2
 
-x0 = sio.open_wrf_dataset(wrf_nc)
+
 x1a = sio.open_wrf_dataset(nc2)
 x1b = xr.open_dataset(nc2)
 
-
-
+x2a = sio.open_wrf_dataset(wrf_nc)
+x2b = xr.open_dataset(wrf_nc)
 
 
 
