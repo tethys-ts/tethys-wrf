@@ -10,7 +10,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 name = 'tethys-wrf'
 main_package = 'tethys_wrf'
 # datasets = 'datasets/time_series'
-version = '0.4.15'
+version = '0.4.16'
 descrip = 'tethys wrf utilities'
 
 # The below code is for readthedocs. To have sphinx/readthedocs interact with
@@ -22,7 +22,7 @@ else:
     INSTALL_REQUIRES = ['dask', 'pyproj', 'netcdf4', 'toolz', 'wrf-python', 'tethys-utils>=0.7.10']
 
 # Get the long description from the README file
-with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 # get all data dirs in the datasets module
@@ -160,9 +160,9 @@ setup(
     #
     # If using Python 2.6 or earlier, then these have to be included in
     # MANIFEST.in as well.
-    package_data={  # Optional
-        main_package: ['*.yml', 'wrf_mappings.csv'],
-    },
+    # package_data={  # Optional
+    #     main_package: ['*.yml', 'wrf_mappings.csv'],
+    # },
 
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
