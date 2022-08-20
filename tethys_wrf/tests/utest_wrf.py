@@ -21,11 +21,11 @@ d
 ### Parameters
 
 base_path = '/media/nvme1/data/UC/wrf'
-nc1 = 'wrfout_d04_2020-02-01_00_00_00'
+nc1 = '/home/mike/data/UC/WRF/domain04/wrfout_d04_2020-01-04_00_00_00'
 # nc1 = 'wrfout_d04_2014-02-22_00_00_00.nc'
 # nc1 = 'wrfout_d04_*'
 
-nc2 = '/media/nvme1/data/met-solutions/new_set2/MetSolutionsWRF_2022_07_28_06Z.nc'
+nc2 = '/home/mike/data/met-solutions/forecasts/MetSolutionsWRF_2022_08_18_06Z.nc'
 
 # ncs1 = ['wrfout_d04_2014-02-22_00_00_00.nc', 'wrfout_d04_2014-03-01_00_00_00.nc']
 
@@ -156,7 +156,7 @@ nc_path = nc2
 x1a = sio.open_wrf_dataset(nc2)
 x1b = xr.open_dataset(nc2)
 
-x2a = sio.open_wrf_dataset(wrf_nc)
+x2a = sio.open_wrf_dataset(nc1)
 x2b = xr.open_dataset(wrf_nc)
 
 

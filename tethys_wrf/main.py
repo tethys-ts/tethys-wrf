@@ -76,6 +76,7 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
 
     ncfile = Dataset(nc_path)
 
+    ## Get the model heights
     h = utils.get_wrf_var(ncfile, "height_agl", times)
 
     ## Iterate through variables
@@ -95,11 +96,17 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
             h2[:] = var_dict['surface_height']
             h3 = xr.concat([h2, h], dim='bottom_top')
 
+            v_bt_len = v3.bottom_top.shape[0]
+            h_bt_len = h3.bottom_top.shape[0]
+
+            if h_bt_len > v_bt_len:
+                raise ValueError('Somehow the heights array has more bottom_top dims than the variable array.')
+
             sh = round(var_dict['surface_height'])
 
             heights2 = [h for h in heights if h >= sh]
 
-            xr2 = interplevel(v3, h3, heights2, squeeze=False)
+            xr2 = interplevel(v3.isel(bottom_top=range(h_bt_len)), h3, heights2, squeeze=False)
 
             del v2
             del v3

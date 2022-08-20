@@ -50,7 +50,7 @@ def get_wrf_var(ncfile, varname, times):
 
     """
     t = getvar(ncfile, varname)
-    t = t.drop('Time').expand_dims({'Time': times}).copy()
+    t = t.drop('Time').expand_dims({'Time': times.values}).copy()
 
     for i in range(len(times)):
         t[{'Time': i}] = getvar(ncfile, varname, timeidx=i)

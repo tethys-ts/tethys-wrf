@@ -465,7 +465,7 @@ wrf_variables_dict = {'air_temperature': {'main': 'tk', 'surface': 'T2', 'surfac
                  'v_wind': {'main': 'va', 'surface': 'V10', 'surface_height': 9.999},
                  'relative_humidity': {'main': 'rh', 'surface': 'rh2', 'surface_height': 1.999},
                  'dew_temperature': {'main': 'td', 'surface': 'td2', 'surface_height': 1.999},
-                 'air_pressure': {'main': 'p', 'surface': 'PSFC', 'surface_height': 0},
+                 'air_pressure': {'main': 'p', 'surface': 'PSFC', 'surface_height': -0.001},
                  'precipitation': {'main': 'RAINNC'},
                  'snowfall': {'main': 'SNOWNC'},
                  'surface_runoff': {'main': 'SFROFF'},
