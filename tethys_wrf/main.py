@@ -84,7 +84,7 @@ def preprocess_data_structure(nc_path, variables, heights, time_index_bool=None)
         var_dict = virtual_parameters.wrf_variables_dict[v]
 
         if 'soil' in v:
-            xr2 = xr1[var_dict['main']].rename({'soil_layers': 'height'}).copy().load()
+            xr2 = xr1[var_dict['main']].rename({'soil_layers': 'height', 'soil_layers_stag': 'height'}).copy().load()
         else:
             xr2 = utils.get_wrf_var(ncfile, var_dict['main'], times)
             proj = xr2.attrs.pop('projection').proj4()
@@ -226,7 +226,7 @@ class WRF(tu.Grid):
 
         ## Determine duplicate times
         if len(nc_paths1) > 1:
-            xr1 = sio.open_wrf_mfdataset(nc_paths1[:2])
+            xr1 = sio.open_mf_wrf_dataset(nc_paths1[:2])
 
             time_bool = xr1.get_index('time').duplicated(keep='first')
 
