@@ -1,5 +1,5 @@
 {% set name = "tethys-wrf" %}
-{% set version = "0.4.18" %}
+{% set version = "0.4.19" %}
 # {% set sha256 = "aae94ef9fe86941d3876bc2c3d37c651d6ebc1f81abc4df1a79ab652c8141b4b" %}
 
 # sha256 is the prefered checksum -- you can get it for a file with:
@@ -41,7 +41,9 @@ requirements:
     - netcdf4
     - toolz
     - wrf-python
-    - tethys-utils
+    - tethys-utils=0.7.35
+    - tethys-data-models=0.4.10
+    - tethysts=0.4.27
 
 test:
   imports:
